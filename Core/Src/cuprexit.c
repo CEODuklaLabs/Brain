@@ -12,8 +12,18 @@ void sendCommand(CUPREXIT_Device *device, CUPREXIT_Command command, uint8_t *dat
 uint8_t isActive(CUPREXIT_Device *device) {
     selectDevice(device);
     sendSPICommand(device, CUPREXIT_COMMAND_GET_STATUS, NULL, 0);
+    uint16_t Cycle = 40;
+    while (spi_response == 0){
+        HAL_Delay(50);
+        if (spi_response == 1)
+            return 1;
+        else
+            Cycle--;
+        
+        if (Cycle == 0) 
+            return 0;
+    }
 }
-
 // Main function to handle commands
 void handleCUPCommand(uint8_t command) {
     switch (command) {
@@ -68,20 +78,6 @@ void checkCuprexitDevices(CUPREXIT_Device CU_devices[]) {
     }
 }
 
-void checkUID(CUPREXIT_Device *device) {
-    // Check if the device is active
-    if (isActive(device) == 1) {    
-        selectDevice(device);
-        sendSPICommand(device, CUPREXIT_COMMAND_GET_UID, NULL, 0);
-    }
-}
-
-void checkUIDresponse() {
-    for (int i = 0; i < 3; i++) {
-        active_device->Device_UID[i] = SPIRxBuffer[i+2];
-    }
-}
-
 void getCuCalib(CUPREXIT_Device *device) {
     spi_response = 0;  // připravíme flag
     sendSPICommand(device, CUPREXIT_COMMAND_GET_CALIB, NULL, 0);
@@ -119,7 +115,6 @@ void setCuCalib(CUPREXIT_Device *device, uint8_t descriptor, float *float_values
     // Čekání na potvrzení přenosu
     while (spi_response == 0);
 }
-
 void getMeas(CUPREXIT_Device *device) {
     selectDevice(device);
     sendSPICommand(device, CUPREXIT_COMMAND_MEAS, NULL, 0);
@@ -146,14 +141,12 @@ void getAllMeasAndSend(CUPREXIT_Device CU_devices[], uint8_t *brain_uid) {
         addDataToUSBBuffer(SPIRxBuffer + 2, 40, 0);  // Přeskočíme [0]=status, [1]=descriptor
     }
 }
-
 uint8_t getStatus(CUPREXIT_Device *device) {
     spi_response = 0;
     sendSPICommand(device, CUPREXIT_COMMAND_GET_STATUS, NULL, 0);
     while (spi_response == 0);
     return SPIRxBuffer[2];
 }
-
 void meas() {
     selectAllDevice(CU_devices);
     sendSPICommand(NULL, CUPREXIT_COMMAND_MEAS, NULL, 0);
@@ -161,17 +154,39 @@ void meas() {
     deselectAllDevices(CU_devices);
 }
 
-void setUserId() {
-    // Implementation for setting user ID
-    printf("Setting user ID\n");
+void setUserId(CUPREXIT_Device *device, uint8_t user_id) {
+    spi_response = 0;
+    selectDevice(device);
+    sendSPICommand(device, CUPREXIT_COMMAND_GET_USER_ID, &user_id, 1);
+    while (spi_response == 0);  // čekáme na odpověď
 }
 
-void getUserId() {
-    // Implementation for getting user ID
-    printf("Getting user ID\n");
+uint8_t getUserId(CUPREXIT_Device *device) {
+    selectDevice(device);
+    sendSPICommand(device, CUPREXIT_COMMAND_GET_USER_ID, NULL, 0);
+    while (spi_response == 0);  // čekáme na odpověď 
+    return SPIRxBuffer[2];
 }
 
 void getUid(CUPREXIT_Device *device) {
+    selectDevice(device);
     sendSPICommand(device, CUPREXIT_COMMAND_GET_UID, NULL, 0);
-    while (HAL_SPI_GetState(&hspi3) != HAL_SPI_STATE_READY);
+    while (spi_response == 0);  // čekáme na odpověď
+
+    device->Device_UID[0] = SPIRxBuffer[2]<<24 + SPIRxBuffer[3]<<16 + SPIRxBuffer[4]<<8 + SPIRxBuffer[5];
+    device->Device_UID[1] = SPIRxBuffer[6]<<24 + SPIRxBuffer[7]<<16 + SPIRxBuffer[8]<<8 + SPIRxBuffer[9];
+    device->Device_UID[2] = SPIRxBuffer[10]<<24 + SPIRxBuffer[11]<<16 + SPIRxBuffer[12]<<8 + SPIRxBuffer[13];
+    
+}
+
+void resetCu(CUPREXIT_Device *device) {
+    spi_response = 0;
+    sendSPICommand(device, CUPREXIT_COMMAND_RESET, NULL, 0);
+    while (spi_response == 0);
+
+    if (SPIRxBuffer[1] != CUPREXIT_SUCCESS) {
+        printf("Reset zařízení %d selhal, kód: 0x%02X\n", device->User_ID, SPIRxBuffer[1]);
+    } else {
+        printf("Zařízení %d bylo resetováno.\n", device->User_ID);
+    }
 }

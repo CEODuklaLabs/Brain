@@ -202,7 +202,8 @@ void sendSPICommand(CUPREXIT_Device *device, CUPREXIT_Command command, uint8_t *
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
     spi_response = 1;
-    if (active_command == CUPREXIT_COMMAND_SET_CALIB) {
+    if (active_command == CUPREXIT_COMMAND_SET_CALIB || 
+          active_command == CUPREXIT_COMMAND_GET_USER_ID) {
         if (SPIRxBuffer[1] != 0x00) {
             // Error handling
         }
