@@ -58,7 +58,8 @@ USB_COMMAND_GET_CU_TEMP     = 0x2EU,    /*!< USB get CU temperature command     
 } USB_COMMANDS;
 
 typedef enum{
-  CUx_DATA                    = 0x40U,    /*!< CU data 0x60-0x69                              */
+  CUx_DATA                    = 0x40U,    /*!< CU data                           */
+  CUx_DATA_CALIB              = 0x41U,    /*!< CU calibration data command                  */
   SCD_DATA                    = 0x50U,    /*!< SCD data command                              */
   AUDIO_DATA                    = 0x51U,    /*!< MIC data command                              */
   SCD_DATA_CALIB              = 0x52U,    /*!< SCD calibration data command                  */

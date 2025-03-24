@@ -50,41 +50,6 @@ void handleCUPCommand(uint8_t command) {
     }
 }
 
-void handleCUPCommandResponse(uint8_t command) {
-    switch (command) {
-        case CUPREXIT_COMMAND_GET_CU_CALIB:
-            getCuCalibresponse();
-            break;
-        case CUPREXIT_COMMAND_SET_CU_CALIB:
-            // Add response handling for setting CU calibration
-            break;
-        case CUPREXIT_COMMAND_GET_MEAS:
-            // Add response handling for getting measurement
-            break;
-        case CUPREXIT_COMMAND_GET_STATUS:
-            // Add response handling for getting status
-            break;
-        case CUPREXIT_COMMAND_MEAS:
-            // Add response handling for measurement
-            break;
-        case CUPREXIT_COMMAND_SET_USER_ID:
-            // Add response handling for setting user ID
-            break;
-        case CUPREXIT_COMMAND_GET_USER_ID:
-            // Add response handling for getting user ID
-            break;
-        case CUPREXIT_COMMAND_GET_UID:
-            checkUIDresponse();
-            break;
-        case CUPREXIT_COMMAND_RESET:
-            // Add response handling for reset
-            break;
-        case CUPREXIT_COMMAND_PING:
-            // Add response handling for ping
-            break;
-    }
-}
-
 // Function to initialize CUPREXIT_Device structure
 void CUPREXIT_InitDevice(CUPREXIT_Device *device, SPI_HandleTypeDef *hspi, uint8_t device_id, uint16_t pin, uint16_t port) {
     device->hspi = hspi;
@@ -118,27 +83,75 @@ void checkUIDresponse() {
 }
 
 void getCuCalib(CUPREXIT_Device *device) {
-    selectDevice(device);
+    spi_response = 0;  // připravíme flag
     sendSPICommand(device, CUPREXIT_COMMAND_GET_CALIB, NULL, 0);
+    while (spi_response == 0);  // čekáme na odpověď
 }
 
-void getCuCalibresponse() {    
-    addDataToUSBBuffer(active_device->Device_UID, 3, 0);
-    addDataToUSBBuffer(SPIRxBuffer+1, 41, 0);
+void getAllCuCalib(CUPREXIT_Device CU_devices[]) {
+    uint8_t descriptor = CUx_DATA_CALIB;
+
+    addDataToUSBBuffer(&descriptor, 1, 0);
+
+    // Iterace přes všech 10 CUPREXIT zařízení
+    for (int i = 0; i < NMBR_CU; i++) {
+        CUPREXIT_Device *dev = &CU_devices[i];
+
+        // Pošleme příkaz na získání kalibrace
+        getCuCalib(dev);
+
+        // Přidáme ID zařízení (User_ID – 1 bajt)
+        addDataToUSBBuffer(&(dev->User_ID), 1, 0);
+
+        // Přidáme 40 bajtů (10 floatů)
+        addDataToUSBBuffer(SPIRxBuffer + 2, 40, 0);  // Přeskočíme [0]=status, [1]=descriptor
+    }
 }
 
 
-
-
+void setCuCalib(CUPREXIT_Device *device, uint8_t descriptor, float *float_values) {
+    uint8_t data[40];  // 10 floatů * 4 bajty = 40 bajtů
+    // Naplnění dat
+    memcpy(&data[0], float_values, sizeof(float) * 10);
+    // Příprava příznaku a odeslání
+    spi_response = 0;
+    sendSPICommand(device, CUPREXIT_COMMAND_SET_CALIB, data, 42);
+    // Čekání na potvrzení přenosu
+    while (spi_response == 0);
+}
 
 void getMeas(CUPREXIT_Device *device) {
     selectDevice(device);
     sendSPICommand(device, CUPREXIT_COMMAND_MEAS, NULL, 0);
+    while (spi_response == 0);  // čekáme na odpověď
+}
+void getAllMeasAndSend(CUPREXIT_Device CU_devices[], uint8_t *brain_uid) {
+    uint8_t descriptor = CUx_DATA;
+
+    addDataToUSBBuffer(&descriptor, 1, 0);
+
+    // Iterace přes všech 10 CUPREXIT zařízení
+    for (int i = 0; i < NMBR_CU; i++) {
+        CUPREXIT_Device *dev = &CU_devices[i];
+        while (getStatus(dev) == CUPREXIT_STATUS_MEASUREMENT) {
+            HAL_Delay(100);
+        }  
+        // Pošleme příkaz na získání kalibrace
+        getMeas(dev);
+
+        // Přidáme ID zařízení (User_ID – 1 bajt)
+        addDataToUSBBuffer(&(dev->User_ID), 1, 0);
+
+        // Přidáme 40 bajtů (10 floatů)
+        addDataToUSBBuffer(SPIRxBuffer + 2, 40, 0);  // Přeskočíme [0]=status, [1]=descriptor
+    }
 }
 
-void getStatus() {
-    // Implementation for getting status
-    printf("Getting status\n");
+uint8_t getStatus(CUPREXIT_Device *device) {
+    spi_response = 0;
+    sendSPICommand(device, CUPREXIT_COMMAND_GET_STATUS, NULL, 0);
+    while (spi_response == 0);
+    return SPIRxBuffer[2];
 }
 
 void meas() {

@@ -38,6 +38,8 @@ extern SPI_HandleTypeDef hspi3;
 /* USER CODE BEGIN Private defines */
 extern int8_t SPIRxBuffer[64];
 extern int8_t SPITxBuffer[64];
+
+uint8_t spi_response;
 /* USER CODE END Private defines */
 
 void MX_SPI3_Init(void);
