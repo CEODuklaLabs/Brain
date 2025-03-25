@@ -162,6 +162,7 @@ int main(void)
     if (USB_Flag == 1){
       	USB_Flag = 0;
         USB_Command = UserRxBufferFS[0];
+        uint8_t *USB_DATA = &UserRxBufferFS[1];
         addSignatureUSBBuffer();      
         addDataToUSBBuffer(UserRxBufferFS, 9, 0);
       	switch(USB_Command){
@@ -203,13 +204,13 @@ int main(void)
             break;
 
         case USB_COMMAND_GET_CU_CALIB:
-            handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB);
+            handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, USB_DATA);
             break;
         case USB_COMMAND_SET_CU_CALIB:
-            handleCUPCommand(CUPREXIT_COMMAND_SET_CALIB);
+            handleCUPCommand(CUPREXIT_COMMAND_SET_CALIB, USB_DATA);
             break;
         case USB_COMMAND_GET_CU_TEMP:
-            handleCUPCommand(CUPREXIT_COMMAND_MEAS);
+            handleCUPCommand(CUPREXIT_COMMAND_MEAS, USB_DATA);
           
         
             
