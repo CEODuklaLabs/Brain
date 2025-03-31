@@ -147,11 +147,6 @@ int main(void)
   CUPREXIT_InitDevice(&CU_devices[8], &hspi3, i++, CS_CU8_Pin, CS_CU8_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[9], &hspi3, i++, CS_CU9_Pin, CS_CU9_GPIO_Port);
 
-  
-
-  CDC_Transmit_FS((uint8_t *)BeeBrain_STATE_FFT_READY , 1);
-  
-
 
   /* USER CODE END 2 */
 
@@ -197,20 +192,21 @@ int main(void)
             addDataToUSBBuffer((int8_t*)&altitude, sizeof(altitude), 0);
             addDataToUSBBuffer(NULL, 1, CUx_DATA);
             for (int i = 0; i < NMBR_CU; i++) {
+            	handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB);
                 addDataToUSBBuffer((int8_t*)&CU_devices[i].User_ID, sizeof(CU_devices[i].User_ID), 0);
                 addDataToUSBBuffer((int8_t*)&CU_devices[i].Device_UID, sizeof(CU_devices[i].Device_UID), 0);
-                handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB);
+
             }	
             break;
 
         case USB_COMMAND_GET_CU_CALIB:
-            handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, USB_DATA);
+            handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, CU_devices);
             break;
         case USB_COMMAND_SET_CU_CALIB:
-            handleCUPCommand(CUPREXIT_COMMAND_SET_CALIB, USB_DATA);
+            handleCUPCommand(CUPREXIT_COMMAND_SET_CALIB, CU_devices);
             break;
         case USB_COMMAND_GET_CU_TEMP:
-            handleCUPCommand(CUPREXIT_COMMAND_MEAS, USB_DATA);
+            handleCUPCommand(CUPREXIT_COMMAND_MEAS, CU_devices);
           
         
             
@@ -243,19 +239,10 @@ int main(void)
             addDataToUSBBuffer(scd4x_set_sensor_altitude(0),2,0);
             scd4x_power_down();
             break;
-        case USB_COMMAND_SCD_FORCE_CALIB:
-            scd4x_wake_up();
-            scd4x_start_periodic_measurement();
-            HAL_Delay(4*60*1000);
-            scd4x_stop_periodic_measurement();
-            HAL_Delay(500);
-            /*scd4x_perform_forced_recalibration(400, &frc_correction);*/
-            scd4x_power_down();
-            break;
         default:
             break;    		
       }
-      addDataToUSBBuffer(BeeBrain_STATE_END, 1, 0);
+      addDataToUSBBuffer(0xff, 1, 0);
       sendUSBMasssage();
     }
     /* USER CODE END WHILE */

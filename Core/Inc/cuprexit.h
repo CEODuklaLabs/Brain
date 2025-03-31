@@ -14,7 +14,7 @@ typedef struct {
     uint16_t port;
     uint32_t Device_UID[3];
     uint8_t active;
-    float32_t calib[10];
+    float calib[10];
 } CUPREXIT_Device;
 
 typedef enum {
@@ -109,10 +109,8 @@ void getAllCuCalib(CUPREXIT_Device CU_devices[]);
  * @brief Nastaví kalibraci mědi pro zařízení CUPREXIT.
  * 
  * @param device Ukazatel na zařízení CUPREXIT.
- * @param descriptor Deskriptor kalibrace.
- * @param float_values Ukazatel na pole hodnot kalibrace.
  */
-void setCuCalib(CUPREXIT_Device *device, uint8_t descriptor, float *float_values);
+void setCuCalib(CUPREXIT_Device *device);
 
 /**
  * @brief Získá měření ze zařízení CUPREXIT.

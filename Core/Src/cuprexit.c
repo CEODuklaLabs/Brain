@@ -24,14 +24,16 @@ uint8_t isActive(CUPREXIT_Device *device) {
             return 0;
     }
 }
+
+
 // Main function to handle commands
-void handleCUPCommand(uint8_t command) {
+void handleCUPCommand(uint8_t command, CUPREXIT_Device *device) {
     switch (command) {
         case CUPREXIT_COMMAND_GET_CALIB:
-            getAllCuCalib(CU_devices);
+            getAllCuCalib(device);
             break;
         case CUPREXIT_COMMAND_SET_CALIB:
-            setCuCalib(device, , );
+            setCuCalib(device);
             break;
         case CUPREXIT_COMMAND_GET_MEAS:
             getMeas(device);
@@ -52,7 +54,7 @@ void handleCUPCommand(uint8_t command) {
             getUid(device);
             break;
         case CUPREXIT_COMMAND_RESET:
-            // Add reset functionality here
+            resetCu(device);
             break;
         case CUPREXIT_COMMAND_PING:
             // Add ping functionality here
@@ -67,7 +69,7 @@ void CUPREXIT_InitDevice(CUPREXIT_Device *device, SPI_HandleTypeDef *hspi, uint8
     device->pin = pin;
     device->port = port;
     device->active = 0;
-    handleCUPCommand(CUPREXIT_COMMAND_GET_UID);
+    handleCUPCommand(CUPREXIT_COMMAND_GET_UID, device);
 }
 
 
@@ -110,16 +112,11 @@ void getAllCuCalib(CUPREXIT_Device CU_devices[]) {
 }
 
 
-void setCuCalib(CUPREXIT_Device *device, uint8_t descriptor, float *float_values) {
-    uint8_t data[40];  // 10 floatů * 4 bajty = 40 bajtů
-    // Naplnění dat
-    memcpy(&data[0], float_values, sizeof(float) * 10);
-    // Příprava příznaku a odeslání
+void setCuCalib(CUPREXIT_Device *device) {
     spi_response = 0;
-    sendSPICommand(device, CUPREXIT_COMMAND_SET_CALIB, data, 42);
+    sendSPICommand(device, CUPREXIT_COMMAND_SET_CALIB, device->calib, 42);
     // Čekání na potvrzení přenosu
     while (spi_response == 0);
-
     if (SPIRxBuffer[2] == 1) {
         device->active = 0;
     } else {
