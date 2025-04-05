@@ -157,13 +157,13 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 
 /* USER CODE BEGIN 1 */
 void SPI_RxTxON(SPI_HandleTypeDef *hspi) {
-    HAL_SPI_Receive_DMA(hspi, SPIRxBuffer, sizeof(SPIRxBuffer));
-    HAL_SPI_Transmit_DMA(hspi, SPITxBuffer, sizeof(SPITxBuffer));
+    HAL_SPI_Receive_DMA(hspi, (uint8_t *)SPIRxBuffer, sizeof(SPIRxBuffer));
+    HAL_SPI_Transmit_DMA(hspi, (uint8_t *) &SPITxBuffer, sizeof(SPITxBuffer));
 }
 
 void selectDevice(CUPREXIT_Device *device) {
   active_device = device;
-  HAL_GPIO_WritePin(device->port, device->pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin((GPIO_TypeDef*)device->port, device->pin, GPIO_PIN_RESET);
 }
 
 void selectAllDevices(CUPREXIT_Device CU_devices[]) {
@@ -174,7 +174,7 @@ void selectAllDevices(CUPREXIT_Device CU_devices[]) {
 
 void deselectDevice(CUPREXIT_Device *device) {
   active_device = NULL;
-  HAL_GPIO_WritePin(device->port, device->pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin((GPIO_TypeDef*)device->port, device->pin, GPIO_PIN_SET);
 }
 
 void deselectAllDevices(CUPREXIT_Device CU_devices[]) {
@@ -195,7 +195,7 @@ void sendSPICommand(CUPREXIT_Device *device, CUPREXIT_Command command, uint8_t *
     SPITxBuffer[0] = device->User_ID;
     selectDevice(device);
   }
-  if (HAL_SPI_Transmit_DMA(&hspi3, SPITxBuffer, size+2) != HAL_OK) {
+  if (HAL_SPI_Transmit_DMA(&hspi3,  (uint8_t *)SPITxBuffer, size+2) != HAL_OK) {
     Error_Handler();
   }
 }

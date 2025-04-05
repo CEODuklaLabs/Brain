@@ -11,7 +11,7 @@ typedef struct {
     SPI_HandleTypeDef *hspi;
     uint8_t User_ID;
     uint16_t pin;
-    uint16_t port;
+    uint32_t port;
     uint32_t Device_UID[3];
     uint8_t active;
     float calib[10];
@@ -70,7 +70,7 @@ uint8_t isActive(CUPREXIT_Device *device);
  * 
  * @param command Příkaz, který má být zpracován.
  */
-void handleCUPCommand(uint8_t command);
+void handleCUPCommand(uint8_t command, CUPREXIT_Device *device);
 
 /**
  * @brief Zkontroluje všechna zařízení CUPREXIT.
@@ -143,12 +143,12 @@ void meas();
 /**
  * @brief Nastaví uživatelské ID.
  */
-void setUserId();
+void setUserId(CUPREXIT_Device *device, uint8_t user_id);
 
 /**
  * @brief Získá uživatelské ID.
  */
-void getUserId();
+uint8_t getUserId(CUPREXIT_Device *device);
 
 /**
  * @brief Získá UID zařízení CUPREXIT.
@@ -157,4 +157,6 @@ void getUserId();
  */
 void getUid(CUPREXIT_Device *device);
 
+
+void resetCu(CUPREXIT_Device *device);
 #endif // CUPREXIT_H

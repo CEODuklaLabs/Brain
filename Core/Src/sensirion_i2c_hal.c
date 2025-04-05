@@ -32,7 +32,7 @@
 #include "sensirion_i2c_hal.h"
 #include "sensirion_common.h"
 #include "sensirion_config.h"
-
+#include "stm32l4xx_hal.h"
 /*
  * INSTRUCTIONS
  * ============
@@ -40,7 +40,7 @@
  * Implement all functions where they are marked as IMPLEMENT.
  * Follow the function specification in the comments.
  */
-
+extern I2C_HandleTypeDef hi2c1;
 /**
  * Select the current i2c bus by index.
  * All following i2c operations will be directed at that bus.
@@ -84,8 +84,7 @@ void sensirion_i2c_hal_free(void) {
  * @returns 0 on success, error code otherwise
  */
 int8_t sensirion_i2c_hal_read(uint8_t address, uint8_t* data, uint16_t count) {
-    /* TODO:IMPLEMENT */
-    return NOT_IMPLEMENTED_ERROR;
+    return HAL_I2C_Master_Receive(&hi2c1, (address << 1), data, count, HAL_MAX_DELAY);
 }
 
 /**
@@ -101,8 +100,7 @@ int8_t sensirion_i2c_hal_read(uint8_t address, uint8_t* data, uint16_t count) {
  */
 int8_t sensirion_i2c_hal_write(uint8_t address, const uint8_t* data,
                                uint16_t count) {
-    /* TODO:IMPLEMENT */
-    return NOT_IMPLEMENTED_ERROR;
+    return HAL_I2C_Master_Transmit(&hi2c1, (address << 1), (uint8_t*)data, count, HAL_MAX_DELAY);
 }
 
 /**
@@ -114,5 +112,9 @@ int8_t sensirion_i2c_hal_write(uint8_t address, const uint8_t* data,
  * @param useconds the sleep time in microseconds
  */
 void sensirion_i2c_hal_sleep_usec(uint32_t useconds) {
-    /* TODO:IMPLEMENT */
+    uint32_t msec = useconds / 1000;
+    if (useconds % 1000 > 0) {
+        msec++;
+    }
+    HAL_Delay(msec);
 }

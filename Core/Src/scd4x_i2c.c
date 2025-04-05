@@ -40,6 +40,7 @@
 #include "sensirion_common.h"
 #include "sensirion_i2c.h"
 #include "sensirion_i2c_hal.h"
+#include <string.h>
 
 #define SCD4X_I2C_ADDRESS 98
 
@@ -143,6 +144,10 @@ int16_t scd4x_get_temperature_offset(int32_t* t_offset_m_deg_c) {
     return NO_ERROR;
 }
 
+int16_t scd4x_get_temperature_offset_int8(int8_t* t_offset_m_deg_c) {
+    return scd4x_get_temperature_offset((int32_t*)t_offset_m_deg_c);
+}
+
 int16_t scd4x_set_temperature_offset_ticks(uint16_t t_offset) {
     int16_t error;
     uint8_t buffer[5];
@@ -183,6 +188,10 @@ int16_t scd4x_get_sensor_altitude(uint16_t* sensor_altitude) {
     }
     *sensor_altitude = sensirion_common_bytes_to_uint16_t(&buffer[0]);
     return NO_ERROR;
+}
+
+int16_t scd4x_get_sensor_altitude_int8(int8_t* sensor_altitude) {
+    return scd4x_get_sensor_altitude((uint16_t*)sensor_altitude);
 }
 
 int16_t scd4x_set_sensor_altitude(uint16_t sensor_altitude) {
@@ -451,4 +460,104 @@ int16_t scd4x_wake_up() {
     (void)sensirion_i2c_write_data(SCD4X_I2C_ADDRESS, &buffer[0], offset);
     sensirion_i2c_hal_sleep_usec(20000);
     return NO_ERROR;
+}
+
+
+/**
+ * 
+ */
+
+ uint8_t* handleSCD4xSetting(uint8_t* data, uint8_t maxAttempts, uint16_t (*setFunction)(int8_t *), uint8_t successCode, uint8_t errorCode) {
+    int8_t attempt;
+    static int8_t result[] = {0,0};
+    int8_t error;
+    for (attempt = 0; attempt < maxAttempts; attempt++) {
+        if (setFunction(data) == 0) {
+            result[0] = ++attempt;
+            result[1] = successCode;
+            error = 0;
+            break;
+        } else {
+            errorCode = 1;
+            scd4x_power_down();
+            HAL_Delay(1000);
+            scd4x_wake_up();
+        }
+    }
+    if (error != 0) {
+        result[0] = ++attempt;
+        result[1] = errorCode;
+    }
+    return &result;
+}
+
+uint8_t* handleSCD4xGetting(uint8_t* data, uint8_t maxAttempts, int16_t (*getFunction)(int8_t *), uint8_t successCode, uint8_t errorCode) {
+    int8_t attempt;
+    static int8_t result[] = {0,0};
+    int8_t error;
+    for (attempt = 0; attempt < maxAttempts; attempt++) {
+        if (getFunction(data) == 0) {
+            result[0] = ++attempt;
+            result[1] = successCode;
+            error = 0;
+            break;
+        } else {
+            errorCode = 1;
+            scd4x_power_down();
+            HAL_Delay(1000);
+            scd4x_wake_up();
+        }
+    }
+    if (error != 0) {
+        result[0] = ++attempt;
+        result[1] = errorCode;
+    }
+    return &result;
+}
+
+
+int16_t scd4x_get_serial_number_block(uint8_t* block) {
+    int16_t error;
+    uint8_t buffer[9];
+    uint16_t offset = 0;
+    offset = sensirion_i2c_add_command_to_buffer(&buffer[0], offset, 0x3682);
+
+    error = sensirion_i2c_write_data(SCD4X_I2C_ADDRESS, &buffer[0], offset);
+    if (error) {
+    return error;
+    }
+
+    sensirion_i2c_hal_sleep_usec(1000);
+
+    error = sensirion_i2c_read_data_inplace(SCD4X_I2C_ADDRESS, &buffer[0], 6);
+    if (error) {
+    return error;
+    }
+    memcpy(block, &buffer[0], 6);
+    return NO_ERROR;
+}
+
+uint16_t scd4x_read_measurement_block(uint8_t* block) {
+    uint16_t co2;
+    int32_t temperature_m_deg_c;
+    int32_t humidity_m_percent_rh;
+    int16_t error;
+    error = scd4x_read_measurement(&co2, &temperature_m_deg_c, &humidity_m_percent_rh);
+    if (error) {
+        return error;
+    }
+    sensirion_common_uint16_t_to_bytes(co2, &block[0]);
+    sensirion_common_uint32_t_to_bytes(temperature_m_deg_c, &block[2]);
+    sensirion_common_uint32_t_to_bytes(humidity_m_percent_rh, &block[6]);
+    return NO_ERROR;
+}
+
+uint16_t scd4x_set_temperature_offset_int8(int8_t *t_offset_m_deg_c_8) {
+    uint32_t t_offset_m_deg_c = (uint32_t)(*t_offset_m_deg_c_8);
+    return (uint16_t)scd4x_set_temperature_offset(t_offset_m_deg_c);
+}
+
+uint16_t scd4x_set_sensor_altitude_int8(int8_t *sensor_altitude_8){
+    uint16_t sensor_altitude = (uint16_t)(*sensor_altitude_8);
+    return (uint16_t)scd4x_set_sensor_altitude(sensor_altitude);
 }

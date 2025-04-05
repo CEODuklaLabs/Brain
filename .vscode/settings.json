@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "sensirion_common.h": "c",
+        "sensirion_i2c_hal.h": "c",
+        "sensirion_config.h": "c",
+        "sensirion_i2c.h": "c",
+        "scd4x_i2c.h": "c",
+        "stm32l4xx_hal.h": "c"
+    }
+}

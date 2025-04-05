@@ -23,6 +23,7 @@ uint8_t isActive(CUPREXIT_Device *device) {
         if (Cycle == 0) 
             return 0;
     }
+    return 0;
 }
 
 
@@ -45,10 +46,10 @@ void handleCUPCommand(uint8_t command, CUPREXIT_Device *device) {
             meas();
             break;
         case CUPREXIT_COMMAND_SET_USER_ID:
-            setUserId();
+            //setUserId();
             break;
         case CUPREXIT_COMMAND_GET_USER_ID:
-            getUserId();
+            getUserId(device);
             break;
         case CUPREXIT_COMMAND_GET_UID:
             getUid(device);
@@ -114,7 +115,7 @@ void getAllCuCalib(CUPREXIT_Device CU_devices[]) {
 
 void setCuCalib(CUPREXIT_Device *device) {
     spi_response = 0;
-    sendSPICommand(device, CUPREXIT_COMMAND_SET_CALIB, device->calib, 42);
+    sendSPICommand(device, CUPREXIT_COMMAND_SET_CALIB, &(device->calib), 42);
     // Čekání na potvrzení přenosu
     while (spi_response == 0);
     if (SPIRxBuffer[2] == 1) {
@@ -164,7 +165,7 @@ uint8_t getStatus(CUPREXIT_Device *device) {
     return SPIRxBuffer[2];
 }
 void meas() {
-    selectAllDevice(CU_devices);
+    selectAllDevices(CU_devices);
     sendSPICommand(NULL, CUPREXIT_COMMAND_MEAS, NULL, 0);
     while (HAL_SPI_GetState(&hspi3) != HAL_SPI_STATE_READY);
     deselectAllDevices(CU_devices);
@@ -197,9 +198,9 @@ void getUid(CUPREXIT_Device *device) {
     sendSPICommand(device, CUPREXIT_COMMAND_GET_UID, NULL, 0);
     while (spi_response == 0);  // čekáme na odpověď
 
-    device->Device_UID[0] = SPIRxBuffer[2]<<24 + SPIRxBuffer[3]<<16 + SPIRxBuffer[4]<<8 + SPIRxBuffer[5];
-    device->Device_UID[1] = SPIRxBuffer[6]<<24 + SPIRxBuffer[7]<<16 + SPIRxBuffer[8]<<8 + SPIRxBuffer[9];
-    device->Device_UID[2] = SPIRxBuffer[10]<<24 + SPIRxBuffer[11]<<16 + SPIRxBuffer[12]<<8 + SPIRxBuffer[13];
+    device->Device_UID[0] = (SPIRxBuffer[2]<<24) + (SPIRxBuffer[3]<<16) + (SPIRxBuffer[4]<<8) + SPIRxBuffer[5];
+    device->Device_UID[1] = (SPIRxBuffer[6]<<24) + (SPIRxBuffer[7]<<16) + (SPIRxBuffer[8]<<8) + SPIRxBuffer[9];
+    device->Device_UID[2] = (SPIRxBuffer[10]<<24) + (SPIRxBuffer[11]<<16) + (SPIRxBuffer[12]<<8) + SPIRxBuffer[13];
     deselectDevice(device);     
 }
 

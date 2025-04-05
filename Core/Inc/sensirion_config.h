@@ -49,21 +49,25 @@
  * define the integral types yourself (see below).
  */
 #include <stdint.h>
-
+#include "stm32l4xx_hal.h"
 /**
  * Typedef section for types commonly defined in <stdint.h>
  * If your system does not provide stdint headers, please define them
  * accordingly. Please make sure to define int64_t and uint64_t.
  */
-/* typedef unsigned long long int uint64_t;
- * typedef long long int int64_t;
- * typedef long int32_t;
- * typedef unsigned long uint32_t;
- * typedef short int16_t;
- * typedef unsigned short uint16_t;
- * typedef char int8_t;
- * typedef unsigned char uint8_t;
- */
+/*
+ typedef unsigned long long int uint64_t;
+ typedef long long int int64_t;
+ typedef long int32_t;
+ typedef unsigned long uint32_t;
+ typedef short int16_t;
+ typedef unsigned short uint16_t;
+ typedef char int8_t;
+ typedef unsigned char uint8_t;
+*/
+#define I2C_READ_ERROR -1
+#define I2C_WRITE_ERROR -2
+#define I2C_TIMEOUT_ERROR -3
 
 #ifndef __cplusplus
 

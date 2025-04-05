@@ -31,6 +31,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 
 #include "cuprexit.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 extern SPI_HandleTypeDef hspi3;
@@ -39,7 +40,7 @@ extern SPI_HandleTypeDef hspi3;
 extern int8_t SPIRxBuffer[64];
 extern int8_t SPITxBuffer[64];
 
-uint8_t spi_response;
+extern uint8_t spi_response;
 /* USER CODE END Private defines */
 
 void MX_SPI3_Init(void);
@@ -67,7 +68,7 @@ void selectDevice(CUPREXIT_Device *device);
  * @param  CU_devices Pole struktur zařízení
  * @retval None 
  */
-void selectAllDevices(CUPREXIT_Device CU_devices[]);
+void selectAllDevices(CUPREXIT_Device* CU_devices);
 
 /**
  * @brief  Funkce pro odvybrání zařízení
