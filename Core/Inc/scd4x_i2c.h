@@ -373,9 +373,9 @@ int16_t scd4x_wake_up(void);
 
 
 uint8_t* handleSCD4xSetting(uint8_t* data, uint8_t maxAttempts, uint16_t (*setFunction)(int8_t *), uint8_t successCode, uint8_t errorCode);
-int16_t scd4x_get_serial_number_block(uint8_t* block);
+int16_t scd4x_get_serial_number_block(int8_t* block);
 uint8_t* handleSCD4xGetting(uint8_t* data, uint8_t maxAttempts, int16_t (*getFunction)(int8_t *), uint8_t successCode, uint8_t errorCode);
-uint16_t scd4x_read_measurement_block(uint8_t* block);
+int16_t scd4x_read_measurement_block(int8_t* block);
 uint16_t scd4x_set_temperature_offset_int8(int8_t *t_offset_m_deg_c_8);
 uint16_t scd4x_set_sensor_altitude_int8(int8_t *sensor_altitude_8);
 int16_t scd4x_get_temperature_offset_int8(int8_t* t_offset_m_deg_c);

@@ -47,40 +47,42 @@ extern "C" {
 
 
 // Příkazy pro USB komunikace
-#define USB_COMMAND_RESET         0x23U    /* USB reset command                              */
-#define USB_COMMAND_PING          0x24U    /* USB ping command                               */
-#define USB_COMMAND_CONF         0x25U    /* USB status command                             */
-#define USB_COMMAND_GET_CU_CALIB 0x26U    /* USB CU calibration command                     */
-#define USB_COMMAND_SET_CU_CALIB 0x27U    /* USB CU calibration command                     */
-#define USB_COMMAND_CU_STATUS    0x28U    /* USB CU status command                          */
-#define USB_COMMAND_GET_MEAS     0x29U    /* USB get measurements command                   */
-#define USB_COMMAND_GET_AUDIO    0x2AU    /* USB get FFT data command                       */
-#define USB_COMMAND_GET_FFT      0x2AU    /* USB get CU calibration command                 */
-#define USB_COMMAND_CLIMA        0x2BU    /* USB get temperature command                    */
-#define USB_COMMAND_SCD_CALIB    0x2CU    /* USB SCD calibration command                    */
-#define USB_COMMAND_SCD_STATUS   0x2DU    /* USB SCD status command                         */
-#define USB_COMMAND_GET_CU_TEMP  0x2EU    /* USB get CU temperature command                 */
+#define USB_COMMAND_RESET         0x01U    /* USB reset command                              */
+#define USB_COMMAND_PING          0x02U    /* USB ping command                               */
+#define USB_COMMAND_CONF          0x03U    /* USB status command                             */
+#define USB_COMMAND_GET_CU_CALIB  0x04U    /* USB CU calibration command                     */
+#define USB_COMMAND_SET_CU_CALIB  0x05U    /* USB CU calibration command                     */
+#define USB_COMMAND_CU_STATUS     0x06U    /* USB CU status command                          */
+#define USB_COMMAND_GET_MEAS      0x07U    /* USB get measurements command                   */
+#define USB_COMMAND_GET_AUDIO     0x08U    /* USB get FFT data command                       */
+#define USB_COMMAND_CLIMA         0x09U    /* USB get temperature command                    */
+#define USB_COMMAND_SCD_CALIB     0x0AU    /* USB SCD calibration command                    */
+#define USB_COMMAND_SCD_STATUS    0x0BU    /* USB SCD status command                         */
+#define USB_COMMAND_GET_CU_TEMP   0x0CU    /* USB get CU temperature command                 */
+
 
 //Descriptory dat do USB buffer
-#define SCD_DATA                    0x42U    /*!< SCD data command                              */
-#define SCD_CAL_TEMP                0x52U    /*!< SCD calibration data command                  */
-#define SCD_CAL_ALT                0x53U    /*!< SCD calibration data command                  */
-#define SCD_LOG_TEMP                0x54U    /*!< SCD log temperature command                   */
-#define SCD_LOG_ALT                0x55U    /*!< SCD log altitude command                      */
+#define SCD_DATA                  0x30U    /*!< SCD data command                              */
+#define SCD_SNO                   0x31U    /*!< SCD serial number command                     */
+#define SCD_CAL_TEMP              0x32U    /*!< SCD calibration data command                  */
+#define SCD_CAL_ALT               0x33U    /*!< SCD calibration data command                  */
+#define SCD_LOG_TEMP              0x34U    /*!< SCD log temperature command                   */
+#define SCD_LOG_ALT               0x35U    /*!< SCD log altitude command                      */
+#define SCD_LOG_SNO               0x36U    /*!< SCD log serial number command                 */
 //Descriptory pro CUx data do USB buffer
-#define CUx_TEMP                    0x40U    /* CU data                           */
-#define CUx_CAL                     0x41U    /*!< CU calibration data command                  */
+#define CUx_TEMP                  0x37U    /* CU data                           */
+#define CUx_CAL                   0x38U    /*!< CU calibration data command                  */
 //Audio data do USB buffer
-#define AUDIO_DATA                  0x51U    /*!< MIC data command                              */
-#define AUDIO_FFT                 0x52U    /*!< MIC FFT data command                          */
+#define AUDIO_DATA                0x39U    /*!< MIC data command                              */
+#define AUDIO_FFT                 0x3AU    /*!< MIC FFT data command                          */
 
-#define BEEBRAIN_STAT               0x53U    /*!< BeeBrain status command                      */
-#define END_MESSAGE                 0xFFU    /*!< End of message command                        */
+#define BEEBRAIN_STAT             0x3BU    /*!< BeeBrain status command                      */
+#define END_MESSAGE               0x3FU    /*!< End of message command                        */
 
 
 //LOGY pro USB buffer
-#define SCD_ERR                     0x43U    /*!< SCD error command                             */
-#define SCD_OK                      0x45U    /*!< SCD OK command                               */
+#define SCD_ERR                   0x43U    /*!< SCD error command                             */
+#define SCD_OK                    0x45U    /*!< SCD OK command                               */
 
 
 /* USER CODE END ET */

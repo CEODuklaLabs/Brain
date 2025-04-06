@@ -337,12 +337,12 @@ void sendUSBMasssage() {
   memset(UserTxBufferFS, 0x00, APP_TX_DATA_SIZE);
 }
 
-void addSignatureUSBBuffer(s) {
+void addSignatureUSBBuffer() {
   uint32_t signature[3];
   signature[0] = HAL_GetUIDw0();
   signature[1] = HAL_GetUIDw1();
   signature[2] = HAL_GetUIDw2();
-  addDataToUSBBuffer(signature, 3*sizeof(uint32_t), 0);
+  addDataToUSBBuffer((uint8_t*)signature, 3*sizeof(uint32_t), 0);
 }
 
 void USB_SendBlock(uint8_t* data, uint32_t len) {

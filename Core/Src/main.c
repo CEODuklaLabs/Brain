@@ -158,6 +158,9 @@ int main(void)
       	USB_Flag = 0;
         USB_Command = UserRxBufferFS[0];
         uint8_t* USB_DATA = &UserRxBufferFS[1];
+        uint8_t tmp_off[4], alt[2];
+        uint8_t data[10];
+        uint8_t scd_serial[6];
         addSignatureUSBBuffer();      
       	switch(USB_Command){
           case USB_COMMAND_RESET:
@@ -169,32 +172,28 @@ int main(void)
             break;
           case USB_COMMAND_GET_AUDIO:
             addDataToUSBBuffer((uint8_t*)USB_COMMAND_GET_AUDIO, 1, 0);
-            Meas_Audio();
+            Meas_Audio(USB_DATA[0]);
             continue;
-            break; 
-            
-              	
+            break;
           case USB_COMMAND_CLIMA:
-            uint8_t data[10];
             addDataToUSBBuffer((uint8_t*)USB_COMMAND_CLIMA, 1,0);
             addDataToUSBBuffer(handleSCD4xGetting(data, 4, scd4x_read_measurement_block, SCD_OK, SCD_ERR), 2, 0);
             addDataToUSBBuffer(data, sizeof(data), SCD_DATA);
             break;   
           case USB_COMMAND_CONF:
-            uint16_t scd_serial[3], altitude;
-            uint32_t tempoffset;
-            scd4x_get_serial_number(&scd_serial[0], &scd_serial[1], &scd_serial[2]);
-            scd4x_get_temperature_offset(&tempoffset);
-            scd4x_get_sensor_altitude(&altitude);
-            addDataToUSBBuffer((uint8_t*)scd_serial, sizeof(scd_serial), SCD_DATA);
-            addDataToUSBBuffer((uint8_t*)&tempoffset, sizeof(tempoffset), 0);
-            addDataToUSBBuffer((uint8_t*)&altitude, sizeof(altitude), 0);
-            addDataToUSBBuffer(NULL, 1, CUx_DATA);
+            scd4x_wake_up();
+            addDataToUSBBuffer(handleSCD4xGetting(scd_serial, 4, scd4x_get_serial_number_block, SCD_OK, SCD_ERR), 2, SCD_LOG_SNO);
+            addDataToUSBBuffer(scd_serial, sizeof(scd_serial), SCD_SNO);
+            addDataToUSBBuffer(handleSCD4xGetting(tmp_off, 4, scd4x_get_temperature_offset_int8, SCD_OK, SCD_ERR), 4, SCD_LOG_TEMP);
+            addDataToUSBBuffer(tmp_off, sizeof(tmp_off), SCD_CAL_TEMP);
+            addDataToUSBBuffer(handleSCD4xGetting(alt, 4, scd4x_get_sensor_altitude_int8, SCD_OK, SCD_ERR), 2, SCD_LOG_ALT);
+            addDataToUSBBuffer(alt, sizeof(alt), SCD_CAL_ALT);
+            scd4x_power_down();
+            addDataToUSBBuffer(NULL, 1, CUx_TEMP);
             for (int i = 0; i < NMBR_CU; i++) {
             	handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, CU_devices);
-                addDataToUSBBuffer((uint8_t*)&CU_devices[i].User_ID, sizeof(CU_devices[i].User_ID), 0);
-                addDataToUSBBuffer((uint8_t*)(CU_devices[i].Device_UID), sizeof(CU_devices[i].Device_UID), 0);
-
+              addDataToUSBBuffer((uint8_t*)&CU_devices[i].User_ID, sizeof(CU_devices[i].User_ID), 0);
+              addDataToUSBBuffer((uint8_t*)(CU_devices[i].Device_UID), sizeof(CU_devices[i].Device_UID), 0);
             }	
             break;
 
@@ -212,14 +211,12 @@ int main(void)
             break;
 
           case USB_COMMAND_SCD_STATUS:
-            uint8_t tmp_off[4], alt[2];
-            uint8_t* res;
             addDataToUSBBuffer((uint8_t *) USB_COMMAND_SCD_STATUS, 1, 0);
             scd4x_wake_up();
             addDataToUSBBuffer(handleSCD4xGetting(tmp_off, 4, scd4x_get_temperature_offset_int8, SCD_OK, SCD_ERR), 4, SCD_LOG_TEMP);
-            addDataToUSBBuffer(tmp_off, 4, SCD_CAL_TEMP);
+            addDataToUSBBuffer(tmp_off, sizeof(tmp_off), SCD_CAL_TEMP);
             addDataToUSBBuffer(handleSCD4xGetting(alt, 4, scd4x_get_sensor_altitude_int8, SCD_OK, SCD_ERR), 2, SCD_LOG_ALT);
-            addDataToUSBBuffer(alt, 2, SCD_CAL_ALT);
+            addDataToUSBBuffer(alt, sizeof(alt), SCD_CAL_ALT);
             scd4x_power_down();
             break;
           case USB_COMMAND_SCD_CALIB:
@@ -232,7 +229,7 @@ int main(void)
           default:
             break;    		
       }
-      addDataToUSBBuffer(END_MESSAGE, 1, 0);
+      addDataToUSBBuffer((uint8_t*)END_MESSAGE, 1, 0);
       sendUSBMasssage();
     }
     /* USER CODE END WHILE */
@@ -338,7 +335,7 @@ void processReceivedData(uint8_t *data) {
           size = 64;
     }
     // Přidání dat do bufferu
-    addDataToUSBBuffer(data, size, CUx_DATA);
+    addDataToUSBBuffer(data, size, CUx_TEMP);
 }
 
 

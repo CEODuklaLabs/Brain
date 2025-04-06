@@ -38,12 +38,7 @@ extern SAI_HandleTypeDef hsai_BlockB1;
 /* USER CODE BEGIN Private defines */
 /*FFT variables*/
 extern int32_t data_sai[WAV_WRITE_SAMPLE_COUNT];
-extern float32_t mic1_data1[WAV_WRITE_SAMPLE_COUNT / 2],
-	mic1_data2[WAV_WRITE_SAMPLE_COUNT / 2];
-extern float32_t data_out_fft1[WAV_WRITE_SAMPLE_COUNT / 2],
-	data_out_fft2[WAV_WRITE_SAMPLE_COUNT / 2];
 extern volatile int16_t sample_sai;
-extern arm_rfft_fast_instance_f32 fft_audio_instance;
 extern volatile uint8_t  half_sai, full_sai;
 
 /* USER CODE END Private defines */
@@ -72,7 +67,7 @@ void HAL_SAI_RxHalfCpltCallback(SAI_HandleTypeDef *hsai);
  * @brief Implementace měření zvuku
  * @retval None
  */
-void Meas_Audio(void);
+void Meas_Audio(uint8_t mode);
 
 
 /* USER CODE END Prototypes */

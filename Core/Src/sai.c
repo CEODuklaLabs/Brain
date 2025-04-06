@@ -23,8 +23,8 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN 0 */
-extern int32_t data_mic_left[WAV_WRITE_SAMPLE_COUNT/4];
-extern int32_t data_mic_right[WAV_WRITE_SAMPLE_COUNT/4];
+extern float32_t data_mic_left[WAV_WRITE_SAMPLE_COUNT/2];
+extern float32_t data_mic_right[WAV_WRITE_SAMPLE_COUNT/2];
 /* USER CODE END 0 */
 
 SAI_HandleTypeDef hsai_BlockB1;
@@ -148,36 +148,52 @@ void HAL_SAI_RxHalfCpltCallback(SAI_HandleTypeDef *hsai)
 	half_sai = 1;
 }
 
-void Meas_Audio() {
+void Meas_Audio(uint8_t mode) {
   uint8_t cycle = 0; // reset the counter
+  addDataToUSBBuffer(&mode, 1, AUDIO_DATA); // add the state to the USB buffer
+  addDataToUSBBuffer((uint8_t*)(WAV_WRITE_SAMPLE_COUNT/2048*NMBR_Audio*2), 1, 0); // add the size of the data to the USB buffer
+  addDataToUSBBuffer((uint8_t*)'L', 1, 0);
+  if (mode == STEREO) {
+    addDataToUSBBuffer((uint8_t*)'R', 1, 0); // add the size of the data to the USB buffer
+  }
+  sendUSBMasssage(); // send the data to the host
+
   HAL_SAI_Receive_DMA(&hsai_BlockB1, (uint8_t *)data_sai, sizeof(data_sai));
-  addDataToUSBBuffer((int8_t*)STEREO, 1, AUDIO_DATA); // add the state to the USB buffer
-  addDataToUSBBuffer((int8_t*)(NMBR_Audio*2), 1, 0); // add the size of the data to the USB buffer
-  
-  while(cycle < NMBR_Audio) { // send 50 FFTs to the PC
+  while(cycle < NMBR_Audio) { // send 50 cycles to the host
+    int index = 0;
     if(half_sai == 1) {
-      for(int i = 0; i < WAV_WRITE_SAMPLE_COUNT/4; i++) {
-        data_mic_left[i] = data_sai[i*2]  >> 8;
-        data_mic_right[i] = data_sai[i*2+1]  >> 8;
+      for(int i = 0; i < WAV_WRITE_SAMPLE_COUNT/2; i++) {
+        data_mic_left[index] = (float32_t)(data_sai[i]>> 8)*1.1920928955e-7f; // 1 / 8388608
+        if (mode == STEREO) {
+          data_mic_right[index] =(float32_t)(data_sai[++i]>> 8)*1.1920928955e-7f; // 1 / 8388608
+        }
       }
       USB_SendBlock((uint8_t*)data_mic_left, sizeof(data_mic_left)); // send the data of the first microphone
-      USB_SendBlock((uint8_t*)data_mic_right, sizeof(data_mic_right)); // send the data of the second microphone
+      if (mode == STEREO) {
+        USB_SendBlock((uint8_t*)data_mic_right, sizeof(data_mic_right)); // send the data of the second microphone
+      }
       half_sai = 0;
     }
 
     // The buffer is full
     if(full_sai == 1) {
-      for(int i = 0; i < WAV_WRITE_SAMPLE_COUNT/2; i++) {
-        data_mic_left[i] = data_sai[WAV_WRITE_SAMPLE_COUNT/2+i*2]  >> 8;
-        data_mic_right[i] = data_sai[WAV_WRITE_SAMPLE_COUNT/2+i*2+1]  >> 8;
+      index = 0;
+      for(int i = WAV_WRITE_SAMPLE_COUNT/2; i < WAV_WRITE_SAMPLE_COUNT; i++) {
+        data_mic_left[index] = (float32_t)(data_sai[i]  >> 8)*1.1920928955e-7f; // 1 / 8388608
+        if (mode == STEREO) {
+          data_mic_right[index] =(float32_t)(data_sai[++i]  >> 8)*1.1920928955e-7f; // 1 / 8388608
+        }
       }
       USB_SendBlock((uint8_t*)data_mic_left, sizeof(data_mic_left)); // send the data of the first microphone
-      USB_SendBlock((uint8_t*)data_mic_right, sizeof(data_mic_right)); // send the data of the second microphone 
+      if (mode == STEREO) {
+        USB_SendBlock((uint8_t*)data_mic_right, sizeof(data_mic_right)); // send the data of the second microphone
+      }
       full_sai = 0;
       cycle++;
     }
   }
 }
+
 
 /* USER CODE END 1 */
 /**

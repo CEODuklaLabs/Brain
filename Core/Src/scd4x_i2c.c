@@ -472,7 +472,7 @@ int16_t scd4x_wake_up() {
     static int8_t result[] = {0,0};
     int8_t error;
     for (attempt = 0; attempt < maxAttempts; attempt++) {
-        if (setFunction(data) == 0) {
+        if (setFunction((int8_t* )data) == 0) {
             result[0] = ++attempt;
             result[1] = successCode;
             error = 0;
@@ -488,7 +488,7 @@ int16_t scd4x_wake_up() {
         result[0] = ++attempt;
         result[1] = errorCode;
     }
-    return &result;
+    return (uint8_t *)result;
 }
 
 uint8_t* handleSCD4xGetting(uint8_t* data, uint8_t maxAttempts, int16_t (*getFunction)(int8_t *), uint8_t successCode, uint8_t errorCode) {
@@ -496,7 +496,7 @@ uint8_t* handleSCD4xGetting(uint8_t* data, uint8_t maxAttempts, int16_t (*getFun
     static int8_t result[] = {0,0};
     int8_t error;
     for (attempt = 0; attempt < maxAttempts; attempt++) {
-        if (getFunction(data) == 0) {
+        if (getFunction((int8_t *)data) == 0) {
             result[0] = ++attempt;
             result[1] = successCode;
             error = 0;
@@ -512,11 +512,11 @@ uint8_t* handleSCD4xGetting(uint8_t* data, uint8_t maxAttempts, int16_t (*getFun
         result[0] = ++attempt;
         result[1] = errorCode;
     }
-    return &result;
+    return (uint8_t *)result;
 }
 
 
-int16_t scd4x_get_serial_number_block(uint8_t* block) {
+int16_t scd4x_get_serial_number_block(int8_t* block) {
     int16_t error;
     uint8_t buffer[9];
     uint16_t offset = 0;
@@ -537,7 +537,7 @@ int16_t scd4x_get_serial_number_block(uint8_t* block) {
     return NO_ERROR;
 }
 
-uint16_t scd4x_read_measurement_block(uint8_t* block) {
+int16_t scd4x_read_measurement_block(int8_t* block) {
     uint16_t co2;
     int32_t temperature_m_deg_c;
     int32_t humidity_m_percent_rh;
@@ -546,9 +546,9 @@ uint16_t scd4x_read_measurement_block(uint8_t* block) {
     if (error) {
         return error;
     }
-    sensirion_common_uint16_t_to_bytes(co2, &block[0]);
-    sensirion_common_uint32_t_to_bytes(temperature_m_deg_c, &block[2]);
-    sensirion_common_uint32_t_to_bytes(humidity_m_percent_rh, &block[6]);
+    sensirion_common_uint16_t_to_bytes(co2, (uint8_t *)(&block[0]));
+    sensirion_common_uint32_t_to_bytes(temperature_m_deg_c, (uint8_t *)(&block[2]));
+    sensirion_common_uint32_t_to_bytes(humidity_m_percent_rh,(uint8_t *)(&block[6]));
     return NO_ERROR;
 }
 
