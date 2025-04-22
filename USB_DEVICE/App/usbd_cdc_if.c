@@ -49,7 +49,7 @@
   */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
-
+uint8_t buff7[7];
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -88,13 +88,18 @@
 /* Create buffer for reception and transmission           */
 /* It's up to user to redefine and/or remove those define */
 /** Received data over USB are stored in this buffer      */
-extern uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
+uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 
 /** Data to send over USB CDC are stored in this buffer   */
-extern uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
+uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-
+USBD_CDC_LineCodingTypeDef LineConding = {
+		  115200,
+		  0x00,
+		  0x00,
+		  0x08
+		};
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -155,6 +160,7 @@ static int8_t CDC_Init_FS(void)
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+  USBD_CDC_ReceivePacket(&hUsbDeviceFS); // <- DŮLEŽITÉ!
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -221,12 +227,22 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-
-    break;
+    	LineConding.bitrate = (uint32_t)(pbuf[0]|(pbuf[1] << 8)| (pbuf[2] << 16) | (pbuf[3]<<24)); // DTERate
+    	LineConding.format = pbuf[4]; // CharFormat
+    	LineConding.paritytype = pbuf[5]; // ParityType
+    	LineConding.datatype = pbuf[6]; // DataBits
+      break;
 
     case CDC_GET_LINE_CODING:
+      pbuf[0] = (uint8_t)(LineConding.bitrate);
+      pbuf[1] = (uint8_t)(LineConding.bitrate >> 8);
+      pbuf[2] = (uint8_t)(LineConding.bitrate >> 16);
+      pbuf[3] = (uint8_t)(LineConding.bitrate >> 24);
+      pbuf[4] = LineConding.format;
+      pbuf[5] = LineConding.paritytype;
+      pbuf[6] = LineConding.datatype;
 
-    break;
+      break;
 
     case CDC_SET_CONTROL_LINE_STATE:
 

@@ -72,6 +72,7 @@ void CUPREXIT_InitDevice(CUPREXIT_Device *device, SPI_HandleTypeDef *hspi, uint8
     device->port = port;
     device->active = 0;
     handleCUPCommand(CUPREXIT_COMMAND_GET_UID, device);
+    handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, device);
 }
 
 

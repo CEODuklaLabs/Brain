@@ -100,7 +100,7 @@ int8_t sensirion_i2c_hal_read(uint8_t address, uint8_t* data, uint16_t count) {
  */
 int8_t sensirion_i2c_hal_write(uint8_t address, const uint8_t* data,
                                uint16_t count) {
-    return HAL_I2C_Master_Transmit(&hi2c1, (address << 1), (uint8_t*)data, count, HAL_MAX_DELAY);
+    return HAL_I2C_Master_Transmit(&hi2c1, (address >> 1), (uint8_t*)data, count, HAL_MAX_DELAY);
 }
 
 /**

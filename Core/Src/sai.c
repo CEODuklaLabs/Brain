@@ -20,7 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "sai.h"
-#include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN 0 */
 extern float32_t data_mic_left[WAV_WRITE_SAMPLE_COUNT/2];
@@ -48,11 +47,11 @@ void MX_SAI1_Init(void)
   hsai_BlockB1.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE;
   hsai_BlockB1.Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
   hsai_BlockB1.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_EMPTY;
-  hsai_BlockB1.Init.AudioFrequency = SAI_AUDIO_FREQUENCY_96K;
+  hsai_BlockB1.Init.AudioFrequency = SAI_AUDIO_FREQUENCY_16K;
   hsai_BlockB1.Init.SynchroExt = SAI_SYNCEXT_DISABLE;
-  hsai_BlockB1.Init.MonoStereoMode = SAI_STEREOMODE;
+  hsai_BlockB1.Init.MonoStereoMode = SAI_MONOMODE;
   hsai_BlockB1.Init.CompandingMode = SAI_NOCOMPANDING;
-  if (HAL_SAI_InitProtocol(&hsai_BlockB1, SAI_I2S_STANDARD, SAI_PROTOCOL_DATASIZE_16BIT, 2) != HAL_OK)
+  if (HAL_SAI_InitProtocol(&hsai_BlockB1, SAI_I2S_STANDARD, SAI_PROTOCOL_DATASIZE_24BIT, 2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -67,10 +66,28 @@ void HAL_SAI_MspInit(SAI_HandleTypeDef* saiHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct;
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 /* SAI1 */
     if(saiHandle->Instance==SAI1_Block_B)
     {
       /* SAI1 clock enable */
+
+  /** Initializes the peripherals clock
+  */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SAI1;
+    PeriphClkInit.Sai1ClockSelection = RCC_SAI1CLKSOURCE_PLLSAI1;
+    PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_MSI;
+    PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
+    PeriphClkInit.PLLSAI1.PLLSAI1N = 24;
+    PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV2;
+    PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
+    PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
+    PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_SAI1CLK;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
       if (SAI1_client == 0)
       {
        __HAL_RCC_SAI1_CLK_ENABLE();
@@ -98,7 +115,7 @@ void HAL_SAI_MspInit(SAI_HandleTypeDef* saiHandle)
     hdma_sai1_b.Init.MemInc = DMA_MINC_ENABLE;
     hdma_sai1_b.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sai1_b.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    hdma_sai1_b.Init.Mode = DMA_NORMAL;
+    hdma_sai1_b.Init.Mode = DMA_CIRCULAR;
     hdma_sai1_b.Init.Priority = DMA_PRIORITY_HIGH;
     if (HAL_DMA_Init(&hdma_sai1_b) != HAL_OK)
     {
@@ -137,65 +154,6 @@ void HAL_SAI_MspDeInit(SAI_HandleTypeDef* saiHandle)
     }
 }
 
-/* USER CODE BEGIN 1 */
-void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
-{
-	full_sai = 1;
-}
-
-void HAL_SAI_RxHalfCpltCallback(SAI_HandleTypeDef *hsai)
-{
-	half_sai = 1;
-}
-
-void Meas_Audio(uint8_t mode) {
-  uint8_t cycle = 0; // reset the counter
-  addDataToUSBBuffer(&mode, 1, AUDIO_DATA); // add the state to the USB buffer
-  addDataToUSBBuffer((uint8_t*)(WAV_WRITE_SAMPLE_COUNT/2048*NMBR_Audio*2), 1, 0); // add the size of the data to the USB buffer
-  addDataToUSBBuffer((uint8_t*)'L', 1, 0);
-  if (mode == STEREO) {
-    addDataToUSBBuffer((uint8_t*)'R', 1, 0); // add the size of the data to the USB buffer
-  }
-  sendUSBMasssage(); // send the data to the host
-
-  HAL_SAI_Receive_DMA(&hsai_BlockB1, (uint8_t *)data_sai, sizeof(data_sai));
-  while(cycle < NMBR_Audio) { // send 50 cycles to the host
-    int index = 0;
-    if(half_sai == 1) {
-      for(int i = 0; i < WAV_WRITE_SAMPLE_COUNT/2; i++) {
-        data_mic_left[index] = (float32_t)(data_sai[i]>> 8)*1.1920928955e-7f; // 1 / 8388608
-        if (mode == STEREO) {
-          data_mic_right[index] =(float32_t)(data_sai[++i]>> 8)*1.1920928955e-7f; // 1 / 8388608
-        }
-      }
-      USB_SendBlock((uint8_t*)data_mic_left, sizeof(data_mic_left)); // send the data of the first microphone
-      if (mode == STEREO) {
-        USB_SendBlock((uint8_t*)data_mic_right, sizeof(data_mic_right)); // send the data of the second microphone
-      }
-      half_sai = 0;
-    }
-
-    // The buffer is full
-    if(full_sai == 1) {
-      index = 0;
-      for(int i = WAV_WRITE_SAMPLE_COUNT/2; i < WAV_WRITE_SAMPLE_COUNT; i++) {
-        data_mic_left[index] = (float32_t)(data_sai[i]  >> 8)*1.1920928955e-7f; // 1 / 8388608
-        if (mode == STEREO) {
-          data_mic_right[index] =(float32_t)(data_sai[++i]  >> 8)*1.1920928955e-7f; // 1 / 8388608
-        }
-      }
-      USB_SendBlock((uint8_t*)data_mic_left, sizeof(data_mic_left)); // send the data of the first microphone
-      if (mode == STEREO) {
-        USB_SendBlock((uint8_t*)data_mic_right, sizeof(data_mic_right)); // send the data of the second microphone
-      }
-      full_sai = 0;
-      cycle++;
-    }
-  }
-}
-
-
-/* USER CODE END 1 */
 /**
   * @}
   */

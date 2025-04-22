@@ -47,19 +47,22 @@ extern "C" {
 
 
 // Příkazy pro USB komunikace
-#define USB_COMMAND_RESET         0x01U    /* USB reset command                              */
-#define USB_COMMAND_PING          0x02U    /* USB ping command                               */
-#define USB_COMMAND_CONF          0x03U    /* USB status command                             */
-#define USB_COMMAND_GET_CU_CALIB  0x04U    /* USB CU calibration command                     */
-#define USB_COMMAND_SET_CU_CALIB  0x05U    /* USB CU calibration command                     */
-#define USB_COMMAND_CU_STATUS     0x06U    /* USB CU status command                          */
-#define USB_COMMAND_GET_MEAS      0x07U    /* USB get measurements command                   */
-#define USB_COMMAND_GET_AUDIO     0x08U    /* USB get FFT data command                       */
-#define USB_COMMAND_CLIMA         0x09U    /* USB get temperature command                    */
-#define USB_COMMAND_SCD_CALIB     0x0AU    /* USB SCD calibration command                    */
-#define USB_COMMAND_SCD_STATUS    0x0BU    /* USB SCD status command                         */
-#define USB_COMMAND_GET_CU_TEMP   0x0CU    /* USB get CU temperature command                 */
-
+typedef enum {
+  USB_COMMAND_RESET = 0x01U,         /* USB reset command                              */
+  USB_COMMAND_PING = 0x02U,          /* USB ping command                               */
+  USB_COMMAND_CONF = 0x03U,          /* USB status command                             */
+  USB_COMMAND_GET_CU_CALIB = 0x04U,  /* USB CU calibration command                     */
+  USB_COMMAND_SET_CU_CALIB = 0x05U,  /* USB CU calibration command                     */
+  USB_COMMAND_CU_STATUS = 0x06U,     /* USB CU status command                          */
+  USB_COMMAND_MEAS = 0x07U,          /* USB get measurements command                   */
+  USB_COMMAND_GET_AUDIO = 0x08U,     /* USB get FFT data command                       */
+  USB_COMMAND_CLIMA = 0x09U,         /* USB get temperature command                    */
+  USB_COMMAND_SCD_CALIB = 0x0AU,     /* USB SCD calibration command                    */
+  USB_COMMAND_SCD_STATUS = 0x0BU,    /* USB SCD status command                         */
+  USB_COMMAND_GET_CU_TEMP = 0x0CU,   /* USB get CU temperature command                 */
+  USB_COMMAND_TEST = 0x0DU,          /* USB test command                               */
+  USB_COMMAND_AUDIO = 0x0EU          /* USB audio command                              */
+} USB_Command_t;
 
 //Descriptory dat do USB buffer
 #define SCD_DATA                  0x30U    /*!< SCD data command                              */
@@ -77,7 +80,7 @@ extern "C" {
 #define AUDIO_FFT                 0x3AU    /*!< MIC FFT data command                          */
 
 #define BEEBRAIN_STAT             0x3BU    /*!< BeeBrain status command                      */
-#define END_MESSAGE               0x3FU    /*!< End of message command                        */
+#define END_MESSAGE               0xFFU    /*!< End of message command                        */
 
 
 //LOGY pro USB buffer

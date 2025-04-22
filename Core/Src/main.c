@@ -18,11 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "crc.h"
 #include "dma.h"
 #include "i2c.h"
 #include "sai.h"
 #include "spi.h"
+#include "usart.h"
 #include "usb_device.h"
 #include "gpio.h"
 
@@ -52,13 +52,13 @@
 
 /* USER CODE BEGIN PV */
 uint8_t USB_Flag;
-uint8_t USB_Command;
+USB_Command_t USB_Command;
 
 /** Received data over USB are stored in this buffer      */
-uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
+extern uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 
 /** Data to send over USB CDC are stored in this buffer   */
-uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
+extern uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 uint16_t UserTxBufferFS_pointer;
 
 /*Response arrays variables*/
@@ -87,9 +87,7 @@ uint8_t timestamp[8];
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -103,6 +101,7 @@ void PeriphCommonClock_Config(void);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -119,9 +118,6 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-/* Configure the peripherals common clocks */
-  PeriphCommonClock_Config();
-
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -132,11 +128,12 @@ int main(void)
   MX_I2C1_Init();
   MX_SAI1_Init();
   MX_SPI3_Init();
-  MX_USB_DEVICE_Init();
-  MX_CRC_Init();
+s  MX_USB_DEVICE_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+  /*Start Usart half duplex comunication*/
   int i = 0;
-  CUPREXIT_InitDevice(&CU_devices[0], &hspi3, i++, CS_CU0_Pin, CS_CU0_GPIO_Port);
+  /*CUPREXIT_InitDevice(&CU_devices[0], &hspi3, i++, CS_CU0_Pin, CS_CU0_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[1], &hspi3, i++, CS_CU1_Pin, CS_CU1_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[2], &hspi3, i++, CS_CU2_Pin, CS_CU2_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[3], &hspi3, i++, CS_CU3_Pin, CS_CU3_GPIO_Port);
@@ -146,40 +143,38 @@ int main(void)
   CUPREXIT_InitDevice(&CU_devices[7], &hspi3, i++, CS_CU7_Pin, CS_CU7_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[8], &hspi3, i++, CS_CU8_Pin, CS_CU8_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[9], &hspi3, i++, CS_CU9_Pin, CS_CU9_GPIO_Port);
-
+  handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, CU_devices);*/
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  //HAL_UART_Transmit(&huart4, (uint8_t*)"STARTING WHILE receiving\r\n", 26, 1000);
+  //nastavení urt na příme do DMA
+  //HAL_HalfDuplex_EnableReceiver(&huart4);
+  //HAL_UART_Receive_DMA(&huart4, UserRxBufferFS, APP_RX_DATA_SIZE);
+  USB_Command=USB_COMMAND_PING;
   while (1)
   {
-    if (USB_Flag == 1){
+    //if (USB_Flag == 1){
       	USB_Flag = 0;
-        USB_Command = UserRxBufferFS[0];
+        //USB_Command = UserRxBufferFS[0];
         uint8_t* USB_DATA = &UserRxBufferFS[1];
         uint8_t tmp_off[4], alt[2];
-        uint8_t data[10];
+        uint8_t data[10] ;
         uint8_t scd_serial[6];
+        uint8_t command_byte = (uint8_t)USB_Command;
         addSignatureUSBBuffer();      
       	switch(USB_Command){
           case USB_COMMAND_RESET:
+            addDataToUSBBuffer((uint8_t*)USB_COMMAND_RESET, 1, 0);
             sendUSBMasssage();
             resetDevice();
             break;  
       	  case USB_COMMAND_PING:
             addDataToUSBBuffer((uint8_t*)USB_COMMAND_PING, 1, 0);
             break;
-          case USB_COMMAND_GET_AUDIO:
-            addDataToUSBBuffer((uint8_t*)USB_COMMAND_GET_AUDIO, 1, 0);
-            Meas_Audio(USB_DATA[0]);
-            continue;
-            break;
-          case USB_COMMAND_CLIMA:
-            addDataToUSBBuffer((uint8_t*)USB_COMMAND_CLIMA, 1,0);
-            addDataToUSBBuffer(handleSCD4xGetting(data, 4, scd4x_read_measurement_block, SCD_OK, SCD_ERR), 2, 0);
-            addDataToUSBBuffer(data, sizeof(data), SCD_DATA);
-            break;   
+
           case USB_COMMAND_CONF:
             scd4x_wake_up();
             addDataToUSBBuffer(handleSCD4xGetting(scd_serial, 4, scd4x_get_serial_number_block, SCD_OK, SCD_ERR), 2, SCD_LOG_SNO);
@@ -191,22 +186,41 @@ int main(void)
             scd4x_power_down();
             addDataToUSBBuffer(NULL, 1, CUx_TEMP);
             for (int i = 0; i < NMBR_CU; i++) {
-            	handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, CU_devices);
               addDataToUSBBuffer((uint8_t*)&CU_devices[i].User_ID, sizeof(CU_devices[i].User_ID), 0);
               addDataToUSBBuffer((uint8_t*)(CU_devices[i].Device_UID), sizeof(CU_devices[i].Device_UID), 0);
+              addDataToUSBBuffer((uint8_t*)(CU_devices[i].calib), sizeof(CU_devices[i].calib), 0);
             }	
             break;
+
+          case USB_COMMAND_GET_AUDIO:
+            addDataToUSBBuffer((uint8_t*)USB_COMMAND_GET_AUDIO, 1, 0);
+            //Meas_Audio(USB_DATA[0]);
+            continue;
+            break;
+          case USB_COMMAND_CLIMA:
+            addDataToUSBBuffer(&command_byte, 1,0);
+            //addDataToUSBBuffer(handleSCD4xGetting(data, 4, scd4x_read_measurement_block, SCD_OK, SCD_ERR), 2, 0);
+            addDataToUSBBuffer(data, sizeof(data), SCD_DATA);
+            break;   
+          
 
           case USB_COMMAND_GET_CU_CALIB:
             handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, CU_devices);
             break;
           case USB_COMMAND_SET_CU_CALIB:
+            
             handleCUPCommand(CUPREXIT_COMMAND_SET_CALIB, CU_devices);
             break;
           case USB_COMMAND_GET_CU_TEMP:
             handleCUPCommand(CUPREXIT_COMMAND_MEAS, CU_devices);
+            break;
+          case USB_COMMAND_MEAS:
+            handleCUPCommand(CUPREXIT_COMMAND_MEAS, CU_devices);
+            break;
+          case USB_COMMAND_CU_STATUS:
+            addDataToUSBBuffer((uint8_t*)USB_COMMAND_CU_STATUS, 1, 0);
           
-        
+
             
             break;
 
@@ -226,16 +240,20 @@ int main(void)
             addDataToUSBBuffer(handleSCD4xSetting(&USB_DATA[4], 4, scd4x_set_sensor_altitude_int8, SCD_OK, SCD_ERR), 2, 0);
             scd4x_power_down();
             break;
+          case USB_COMMAND_TEST:
+            addDataToUSBBuffer((uint8_t*)USB_COMMAND_TEST, 1,0);
+            addDataToUSBBuffer((uint8_t*)USB_DATA, 40, 0);
+            break;
           default:
             break;    		
       }
       addDataToUSBBuffer((uint8_t*)END_MESSAGE, 1, 0);
-      sendUSBMasssage();
-    }
+      sendUARTMasssage();
+    //}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  	  
+	  
   }
   /* USER CODE END 3 */
 }
@@ -259,7 +277,8 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
@@ -285,32 +304,6 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/**
-  * @brief Peripherals Common Clock Configuration
-  * @retval None
-  */
-void PeriphCommonClock_Config(void)
-{
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-
-  /** Initializes the peripherals clock
-  */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SAI1|RCC_PERIPHCLK_USB;
-  PeriphClkInit.Sai1ClockSelection = RCC_SAI1CLKSOURCE_PLLSAI1;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
-  PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_MSI;
-  PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
-  PeriphClkInit.PLLSAI1.PLLSAI1N = 24;
-  PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_SAI1CLK|RCC_PLLSAI1_48M2CLK;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }

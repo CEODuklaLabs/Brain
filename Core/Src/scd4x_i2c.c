@@ -495,6 +495,7 @@ uint8_t* handleSCD4xGetting(uint8_t* data, uint8_t maxAttempts, int16_t (*getFun
     int8_t attempt;
     static int8_t result[] = {0,0};
     int8_t error;
+    scd4x_wake_up();
     for (attempt = 0; attempt < maxAttempts; attempt++) {
         if (getFunction((int8_t *)data) == 0) {
             result[0] = ++attempt;
@@ -512,6 +513,7 @@ uint8_t* handleSCD4xGetting(uint8_t* data, uint8_t maxAttempts, int16_t (*getFun
         result[0] = ++attempt;
         result[1] = errorCode;
     }
+    scd4x_power_down();
     return (uint8_t *)result;
 }
 
