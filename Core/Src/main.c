@@ -31,6 +31,7 @@
 
 #include "usbd_cdc_if.h"
 #include "scd4x_i2c.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,19 +66,18 @@ uint16_t UserTxBufferFS_pointer;
 int8_t SCD_data[16];
 int8_t BRAIN_response[4];
 uint8_t spi_response;
-
+int8_t audio_mode = 0;
 int32_t data_sai[WAV_WRITE_SAMPLE_COUNT];
-int32_t data_mic_left[WAV_WRITE_SAMPLE_COUNT/2];
-int32_t data_mic_right[WAV_WRITE_SAMPLE_COUNT/2];
+float32_t data_mic_left[WAV_WRITE_SAMPLE_COUNT];
 
 volatile int16_t sample_sai;
 arm_rfft_fast_instance_f32 fft_audio_instance;
 volatile uint8_t  half_sai, full_sai;
 
- CUPREXIT_Command active_command;
+CUPREXIT_Command active_command;
 CUPREXIT_Device *active_device;
 
-CUPREXIT_Device CU_devices[NMBR_CU];
+//CUPREXIT_Device CU_devices[NMBR_CU];
 
 int8_t SPIRxBuffer[64];
 int8_t SPITxBuffer[64];
@@ -128,11 +128,13 @@ int main(void)
   MX_I2C1_Init();
   MX_SAI1_Init();
   MX_SPI3_Init();
-s  MX_USB_DEVICE_Init();
   MX_UART4_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
+  char* data = "STARTING WHILE receiving\r\n";
+  char* data2 = "Recived\r\n";
   /*Start Usart half duplex comunication*/
-  int i = 0;
+  //int i = 0;
   /*CUPREXIT_InitDevice(&CU_devices[0], &hspi3, i++, CS_CU0_Pin, CS_CU0_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[1], &hspi3, i++, CS_CU1_Pin, CS_CU1_GPIO_Port);
   CUPREXIT_InitDevice(&CU_devices[2], &hspi3, i++, CS_CU2_Pin, CS_CU2_GPIO_Port);
@@ -153,10 +155,18 @@ s  MX_USB_DEVICE_Init();
   //nastavení urt na příme do DMA
   //HAL_HalfDuplex_EnableReceiver(&huart4);
   //HAL_UART_Receive_DMA(&huart4, UserRxBufferFS, APP_RX_DATA_SIZE);
-  USB_Command=USB_COMMAND_PING;
+  USB_Command=USB_COMMAND_GET_AUDIO;
+  audio_mode = 0;
+  USB_Flag=1;
+  HAL_UART_Transmit(&huart4, (uint8_t*)"STARTING WHILE receiving\r\n", 26, 1000);
   while (1)
   {
-    //if (USB_Flag == 1){
+    
+    //CDC_Transmit_FS((uint8_t*)data, strlen(data));
+    //HAL_Delay(1000);
+    if (USB_Flag == 1){
+	  	//CDC_Transmit_FS((uint8_t*)data2, strlen(data2));
+        
       	USB_Flag = 0;
         //USB_Command = UserRxBufferFS[0];
         uint8_t* USB_DATA = &UserRxBufferFS[1];
@@ -164,18 +174,17 @@ s  MX_USB_DEVICE_Init();
         uint8_t data[10] ;
         uint8_t scd_serial[6];
         uint8_t command_byte = (uint8_t)USB_Command;
-        addSignatureUSBBuffer();      
       	switch(USB_Command){
-          case USB_COMMAND_RESET:
+          /*case USB_COMMAND_RESET:
             addDataToUSBBuffer((uint8_t*)USB_COMMAND_RESET, 1, 0);
             sendUSBMasssage();
             resetDevice();
-            break;  
-      	  case USB_COMMAND_PING:
+            break;  */
+      	  /*case USB_COMMAND_PING:
             addDataToUSBBuffer((uint8_t*)USB_COMMAND_PING, 1, 0);
             break;
-
-          case USB_COMMAND_CONF:
+*/
+          /*case USB_COMMAND_CONF:
             scd4x_wake_up();
             addDataToUSBBuffer(handleSCD4xGetting(scd_serial, 4, scd4x_get_serial_number_block, SCD_OK, SCD_ERR), 2, SCD_LOG_SNO);
             addDataToUSBBuffer(scd_serial, sizeof(scd_serial), SCD_SNO);
@@ -185,71 +194,69 @@ s  MX_USB_DEVICE_Init();
             addDataToUSBBuffer(alt, sizeof(alt), SCD_CAL_ALT);
             scd4x_power_down();
             addDataToUSBBuffer(NULL, 1, CUx_TEMP);
-            for (int i = 0; i < NMBR_CU; i++) {
-              addDataToUSBBuffer((uint8_t*)&CU_devices[i].User_ID, sizeof(CU_devices[i].User_ID), 0);
-              addDataToUSBBuffer((uint8_t*)(CU_devices[i].Device_UID), sizeof(CU_devices[i].Device_UID), 0);
-              addDataToUSBBuffer((uint8_t*)(CU_devices[i].calib), sizeof(CU_devices[i].calib), 0);
-            }	
+            //for (int i = 0; i < NMBR_CU; i++) {
+              //addDataToUSBBuffer((uint8_t*)&CU_devices[i].User_ID, sizeof(CU_devices[i].User_ID), 0);
+              //addDataToUSBBuffer((uint8_t*)(CU_devices[i].Device_UID), sizeof(CU_devices[i].Device_UID), 0);
+              //addDataToUSBBuffer((uint8_t*)(CU_devices[i].calib), sizeof(CU_devices[i].calib), 0);
+            //}
             break;
-
+*/
           case USB_COMMAND_GET_AUDIO:
-            addDataToUSBBuffer((uint8_t*)USB_COMMAND_GET_AUDIO, 1, 0);
-            //Meas_Audio(USB_DATA[0]);
-            continue;
+            StartAudioProcessing(0,0);
             break;
-          case USB_COMMAND_CLIMA:
-            addDataToUSBBuffer(&command_byte, 1,0);
+          /*case USB_COMMAND_CLIMA:
+            addDataToBuffer(&command_byte, 1,0);
             //addDataToUSBBuffer(handleSCD4xGetting(data, 4, scd4x_read_measurement_block, SCD_OK, SCD_ERR), 2, 0);
-            addDataToUSBBuffer(data, sizeof(data), SCD_DATA);
+            addDataToBuffer(data, sizeof(data), SCD_DATA);
             break;   
-          
+          */
 
           case USB_COMMAND_GET_CU_CALIB:
-            handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, CU_devices);
+            //handleCUPCommand(CUPREXIT_COMMAND_GET_CALIB, CU_devices);
             break;
           case USB_COMMAND_SET_CU_CALIB:
             
-            handleCUPCommand(CUPREXIT_COMMAND_SET_CALIB, CU_devices);
+           // handleCUPCommand(CUPREXIT_COMMAND_SET_CALIB, CU_devices);
             break;
           case USB_COMMAND_GET_CU_TEMP:
-            handleCUPCommand(CUPREXIT_COMMAND_MEAS, CU_devices);
+            //handleCUPCommand(CUPREXIT_COMMAND_MEAS, CU_devices);
             break;
           case USB_COMMAND_MEAS:
-            handleCUPCommand(CUPREXIT_COMMAND_MEAS, CU_devices);
+            //handleCUPCommand(CUPREXIT_COMMAND_MEAS, CU_devices);
             break;
           case USB_COMMAND_CU_STATUS:
-            addDataToUSBBuffer((uint8_t*)USB_COMMAND_CU_STATUS, 1, 0);
+            //addDataToUSBBuffer((uint8_t*)USB_COMMAND_CU_STATUS, 1, 0);
           
 
             
             break;
 
           case USB_COMMAND_SCD_STATUS:
-            addDataToUSBBuffer((uint8_t *) USB_COMMAND_SCD_STATUS, 1, 0);
+            //addDataToUSBBuffer((uint8_t *) USB_COMMAND_SCD_STATUS, 1, 0);
             scd4x_wake_up();
-            addDataToUSBBuffer(handleSCD4xGetting(tmp_off, 4, scd4x_get_temperature_offset_int8, SCD_OK, SCD_ERR), 4, SCD_LOG_TEMP);
+            /*addDataToUSBBuffer(handleSCD4xGetting(tmp_off, 4, scd4x_get_temperature_offset_int8, SCD_OK, SCD_ERR), 4, SCD_LOG_TEMP);
             addDataToUSBBuffer(tmp_off, sizeof(tmp_off), SCD_CAL_TEMP);
             addDataToUSBBuffer(handleSCD4xGetting(alt, 4, scd4x_get_sensor_altitude_int8, SCD_OK, SCD_ERR), 2, SCD_LOG_ALT);
-            addDataToUSBBuffer(alt, sizeof(alt), SCD_CAL_ALT);
+            addDataToUSBBuffer(alt, sizeof(alt), SCD_CAL_ALT);*/
             scd4x_power_down();
             break;
           case USB_COMMAND_SCD_CALIB:
-            addDataToUSBBuffer((uint8_t*)USB_COMMAND_SCD_CALIB, 1,0);
+            //addDataToUSBBuffer((uint8_t*)USB_COMMAND_SCD_CALIB, 1,0);
             scd4x_wake_up(  );
-            addDataToUSBBuffer(handleSCD4xSetting(&USB_DATA[0], 4, scd4x_set_temperature_offset_int8, SCD_OK, SCD_ERR), 2, 0);
-            addDataToUSBBuffer(handleSCD4xSetting(&USB_DATA[4], 4, scd4x_set_sensor_altitude_int8, SCD_OK, SCD_ERR), 2, 0);
+            //addDataToUSBBuffer(handleSCD4xSetting(&USB_DATA[0], 4, scd4x_set_temperature_offset_int8, SCD_OK, SCD_ERR), 2, 0);
+            //addDataToUSBBuffer(handleSCD4xSetting(&USB_DATA[4], 4, scd4x_set_sensor_altitude_int8, SCD_OK, SCD_ERR), 2, 0);
             scd4x_power_down();
             break;
           case USB_COMMAND_TEST:
-            addDataToUSBBuffer((uint8_t*)USB_COMMAND_TEST, 1,0);
-            addDataToUSBBuffer((uint8_t*)USB_DATA, 40, 0);
+            //addDataToUSBBuffer((uint8_t*)USB_COMMAND_TEST, 1,0);
+            //addDataToUSBBuffer((uint8_t*)USB_DATA, 40, 0);
             break;
           default:
             break;    		
       }
-      addDataToUSBBuffer((uint8_t*)END_MESSAGE, 1, 0);
-      sendUARTMasssage();
-    //}
+      //addDataToUSBBuffer((uint8_t*)END_MESSAGE, 1, 0);
+
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -322,7 +329,7 @@ void processReceivedData(uint8_t *data) {
       case USB_COMMAND_GET_CU_CALIB: /*recieve actual calib data*/
       case USB_COMMAND_SET_CU_CALIB: /*recieve old calib data*/
       case USB_COMMAND_GET_CU_TEMP: /*recieve actual temp data*/
-          size = size + NMBR_CU_TEMP*4;
+          //size = size + NMBR_CU_TEMP*4;
           break;
       case USB_COMMAND_CU_STATUS:
           size = 64;

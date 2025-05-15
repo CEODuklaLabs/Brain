@@ -77,10 +77,10 @@ void CUPREXIT_InitDevice(CUPREXIT_Device *device, SPI_HandleTypeDef *hspi, uint8
 
 
 void checkCuprexitDevices(CUPREXIT_Device CU_devices[]) {
-    for (int i = 0; i < NMBR_CU; i++) {
+    /*for (int i = 0; i < NMBR_CU; i++) {
         isActive(&CU_devices[i]);
         checkUID(&CU_devices[i]);
-    }
+    }*/
 }
 
 void getCuCalib(CUPREXIT_Device *device) {
@@ -100,7 +100,7 @@ void getAllCuCalib(CUPREXIT_Device CU_devices[]) {
     addDataToUSBBuffer(NULL, 1, descriptor);
 
     // Iterace přes všech 10 CUPREXIT zařízení
-    for (int i = 0; i < NMBR_CU; i++) {
+   /* for (int i = 0; i < NMBR_CU; i++) {
         CUPREXIT_Device *dev = &CU_devices[i];
 
         // Pošleme příkaz na získání kalibrace
@@ -111,7 +111,7 @@ void getAllCuCalib(CUPREXIT_Device CU_devices[]) {
 
         // Přidáme 40 bajtů (10 floatů)
         addDataToUSBBuffer((uint8_t *)SPIRxBuffer + 2, 40, 0);  // Přeskočíme [0]=status, [1]=descriptor
-    }
+    }*/
 }
 
 
@@ -143,7 +143,7 @@ void getAllMeasAndSend(CUPREXIT_Device CU_devices[], uint8_t *brain_uid) {
     addDataToUSBBuffer(&descriptor, 1, 0);
 
     // Iterace přes všech 10 CUPREXIT zařízení
-    for (int i = 0; i < NMBR_CU; i++) {
+    /*for (int i = 0; i < NMBR_CU; i++) {
         CUPREXIT_Device *dev = &CU_devices[i];
         while (getStatus(dev) == CUPREXIT_STATUS_MEASUREMENT) {
             HAL_Delay(100);
@@ -157,7 +157,7 @@ void getAllMeasAndSend(CUPREXIT_Device CU_devices[], uint8_t *brain_uid) {
         // Přidáme 40 bajtů (10 floatů)
         addDataToUSBBuffer((uint8_t *)SPIRxBuffer + 2, 40, 0);  // Přeskočíme [0]=status, [1]=descriptor
         
-    }
+    }*/
 }
 uint8_t getStatus(CUPREXIT_Device *device) {
     spi_response = 0;
@@ -167,10 +167,10 @@ uint8_t getStatus(CUPREXIT_Device *device) {
     return SPIRxBuffer[2];
 }
 void meas() {
-    selectAllDevices(CU_devices);
+    //selectAllDevices(CU_devices);
     sendSPICommand(NULL, CUPREXIT_COMMAND_MEAS, NULL, 0);
     while (HAL_SPI_GetState(&hspi3) != HAL_SPI_STATE_READY);
-    deselectAllDevices(CU_devices);
+    //deselectAllDevices(CU_devices);
 }
 
 void setUserId(CUPREXIT_Device *device, uint8_t user_id) {

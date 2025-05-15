@@ -41,7 +41,7 @@ typedef enum {
 extern CUPREXIT_Command active_command;
 extern CUPREXIT_Device *active_device;
 
-extern CUPREXIT_Device CU_devices[NMBR_CU];
+//extern CUPREXIT_Device CU_devices[NMBR_CU];
 
 
 void CUPREXIT_InitDevice(CUPREXIT_Device *device, SPI_HandleTypeDef *hspi, uint8_t device_id, uint16_t pin, GPIO_TypeDef * port);

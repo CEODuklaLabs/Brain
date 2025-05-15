@@ -167,9 +167,9 @@ void selectDevice(CUPREXIT_Device *device) {
 }
 
 void selectAllDevices(CUPREXIT_Device CU_devices[]) {
-  for (int i = 0; i < NMBR_CU; i++) {
+  /*for (int i = 0; i < NMBR_CU; i++) {
       selectDevice(&CU_devices[i]);
-  }
+  }*/
 }
 
 void deselectDevice(CUPREXIT_Device *device) {
@@ -178,9 +178,9 @@ void deselectDevice(CUPREXIT_Device *device) {
 }
 
 void deselectAllDevices(CUPREXIT_Device CU_devices[]) {
-  for (int i = 0; i < NMBR_CU; i++) {
+  /*for (int i = 0; i < NMBR_CU; i++) {
       deselectDevice(&CU_devices[i]);
-  }
+  }*/
 }
 
 void sendSPICommand(CUPREXIT_Device *device, CUPREXIT_Command command, uint8_t *data, uint8_t size) {

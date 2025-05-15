@@ -20,10 +20,23 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "sai.h"
-
+#include "usbd_cdc_if.h"
+#include "main.h"
+#include "usart.h"
+#include "string.h"
 /* USER CODE BEGIN 0 */
-extern float32_t data_mic_left[WAV_WRITE_SAMPLE_COUNT/2];
-extern float32_t data_mic_right[WAV_WRITE_SAMPLE_COUNT/2];
+extern float32_t data_mic_left[WAV_WRITE_SAMPLE_COUNT];
+extern int32_t data_sai[WAV_WRITE_SAMPLE_COUNT];
+extern int8_t audio_mode;
+
+arm_rfft_fast_instance_f32 fftInstance;
+uint8_t audio_message[WAV_WRITE_SAMPLE_COUNT/2 * sizeof(float32_t)];
+uint16_t audio_pointer = 0;
+uint8_t audio_header[12+4+1]; // 0 - FFT, 1 - USB
+
+
+
+
 /* USER CODE END 0 */
 
 SAI_HandleTypeDef hsai_BlockB1;
@@ -34,7 +47,12 @@ void MX_SAI1_Init(void)
 {
 
   /* USER CODE BEGIN SAI1_Init 0 */
+  uint32_t signature[3];
+  signature[0] = HAL_GetUIDw0();
+  signature[1] = HAL_GetUIDw1();
+  signature[2] = HAL_GetUIDw2();
 
+  memcpy(audio_header, signature, sizeof(signature));
   /* USER CODE END SAI1_Init 0 */
 
   /* USER CODE BEGIN SAI1_Init 1 */
@@ -152,6 +170,73 @@ void HAL_SAI_MspDeInit(SAI_HandleTypeDef* saiHandle)
     HAL_DMA_DeInit(saiHandle->hdmarx);
     HAL_DMA_DeInit(saiHandle->hdmatx);
     }
+}
+
+void makeAudioMassage(uint8_t *data, uint32_t len) {
+
+    // Prepare the data for transmission
+    memcpy(audio_message+audio_pointer, data, len); 
+}
+
+
+void StartAudioProcessing(uint8_t mode, uint32_t num_samples) {
+    // Initialize FFT instance
+    audio_header[12] = mode;
+    if (mode == 0) {
+        // FFT mode
+    	audio_mode = 0;
+      arm_rfft_fast_init_f32(&fftInstance, WAV_WRITE_SAMPLE_COUNT);
+        audio_header[13] = (uint8_t*)2048;
+    } else if (mode == 1) {
+        // USB mode
+        audio_mode = 1;
+        audio_header[13] = (uint8_t*)num_samples;
+    } else if (mode == 2) {
+        // complex mode
+        audio_mode = 2;
+        arm_rfft_fast_init_f32(&fftInstance, WAV_WRITE_SAMPLE_COUNT);
+        audio_header[13] = (uint8_t*)4096;
+    } else {
+        // Invalid mode
+        return;
+    }
+    // Start DMA-based SAI reception
+    HAL_SAI_Receive_DMA(&hsai_BlockB1, (uint8_t *)data_sai, WAV_WRITE_SAMPLE_COUNT);
+}
+
+void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai) {
+
+  HAL_SAI_DMAStop(&hsai_BlockB1);
+  // Process buffer with 8-bit shift
+  for (int i = 0; i < WAV_WRITE_SAMPLE_COUNT; i++) {
+    data_mic_left[i] = (float32_t)(data_sai[i]>>8);
+  }
+
+  if (audio_mode == 0) { // Process FFT
+    ProcessFFT(&data_mic_left, &data_mic_left);
+  }
+  else if (audio_mode == 1) { // Send data over USB
+
+    CDC_Transmit_FS((uint8_t *)data_mic_left, WAV_WRITE_SAMPLE_COUNT * sizeof(float32_t));
+  }
+}
+
+void ProcessFFT(float32_t *input, float32_t *output) {
+    // Perform FFT
+    if (arm_rfft_fast_init_f32(&fftInstance, WAV_WRITE_SAMPLE_COUNT) != ARM_MATH_SUCCESS) {
+            Error_Handler();
+    }
+    arm_rfft_fast_f32(&fftInstance, input, output, 0);
+    float32_t mag[WAV_WRITE_SAMPLE_COUNT / 2];
+    // Compute magnitude
+    for (int i = 0; i < WAV_WRITE_SAMPLE_COUNT / 2; i++) {
+        mag[i] = sqrtf(output[2 * i] * output[2 * i] + output[2 * i + 1] * output[2 * i + 1]);
+    }
+    makeAudioMassage(mag, sizeof(mag));
+    HAL_UART_Transmit(&huart4, (uint8_t*)audio_header, sizeof(audio_header), 1000);
+    HAL_UART_Transmit(&huart4, (uint8_t*)audio_header, sizeof(audio_header), 1000);
+
+    //sendUSBMasssage(audio_message, sizeof(audio_message));
 }
 
 /**

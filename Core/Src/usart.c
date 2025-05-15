@@ -171,9 +171,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   USB_Flag = 1;
 }
 
-void sendUARTMasssage() {
+void sendUARTMasssage(uint8_t* data) {
   //HAL_HalfDuplex_EnableTransmitter(&huart4);
-  HAL_UART_Transmit(&huart4, UserTxBufferFS, UserTxBufferFS_pointer, 1000);
+  HAL_UART_Transmit(&huart4, data, sizeof(data), 1000);
   UserTxBufferFS_pointer = 0;
   memset(UserTxBufferFS, 0x00, APP_TX_DATA_SIZE);
   //HAL_HalfDuplex_EnableReceiver(&huart4);

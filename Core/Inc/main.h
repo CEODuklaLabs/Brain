@@ -97,13 +97,13 @@ typedef enum {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define NMBR_CU 10
+/*#define NMBR_CU 10
 #define NMBR_CU_TEMP 10
-#define NMBR_Audio 100
-#define WAV_WRITE_SAMPLE_COUNT 8192
+#define NMBR_Audio 100*/
+#define WAV_WRITE_SAMPLE_COUNT 4096
 
-#define STEREO 1
-#define MONO 2
+//#define STEREO 1
+//#define MONO 2
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

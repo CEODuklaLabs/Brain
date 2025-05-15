@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -49,7 +49,7 @@
   */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
-uint8_t buff7[7];
+
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -94,12 +94,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-USBD_CDC_LineCodingTypeDef LineConding = {
-		  115200,
-		  0x00,
-		  0x00,
-		  0x08
-		};
+
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -133,7 +128,7 @@ static int8_t CDC_Receive_FS(uint8_t* pbuf, uint32_t *Len);
 static int8_t CDC_TransmitCplt_FS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
-
+static void processReceivedData(uint8_t *data);
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
@@ -160,7 +155,6 @@ static int8_t CDC_Init_FS(void)
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS); // <- DŮLEŽITÉ!
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -188,7 +182,6 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* USER CODE BEGIN 5 */
   switch(cmd)
   {
-    
     case CDC_SEND_ENCAPSULATED_COMMAND:
 
     break;
@@ -202,7 +195,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
     case CDC_GET_COMM_FEATURE:
-       
+
     break;
 
     case CDC_CLEAR_COMM_FEATURE:
@@ -227,22 +220,12 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-    	LineConding.bitrate = (uint32_t)(pbuf[0]|(pbuf[1] << 8)| (pbuf[2] << 16) | (pbuf[3]<<24)); // DTERate
-    	LineConding.format = pbuf[4]; // CharFormat
-    	LineConding.paritytype = pbuf[5]; // ParityType
-    	LineConding.datatype = pbuf[6]; // DataBits
-      break;
+
+    break;
 
     case CDC_GET_LINE_CODING:
-      pbuf[0] = (uint8_t)(LineConding.bitrate);
-      pbuf[1] = (uint8_t)(LineConding.bitrate >> 8);
-      pbuf[2] = (uint8_t)(LineConding.bitrate >> 16);
-      pbuf[3] = (uint8_t)(LineConding.bitrate >> 24);
-      pbuf[4] = LineConding.format;
-      pbuf[5] = LineConding.paritytype;
-      pbuf[6] = LineConding.datatype;
 
-      break;
+    break;
 
     case CDC_SET_CONTROL_LINE_STATE:
 
@@ -280,9 +263,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-
-  USB_Flag = 1;
-
+  /* Process the data received in the CDC interface */
+  processReceivedData(Buf);
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -336,29 +318,44 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
-void addDataToUSBBuffer(uint8_t* data, size_t size, uint8_t descriptor) {
+void processReceivedData(uint8_t *data) {
+  // Zpracování přijatých dat
+  USB_Flag = 1;
+  USB_Command = data[0];
+  uint8_t* UserRxBufferFS = &data[1];
+  // Přidání dat do bufferu
+  //addDataToUSBBuffer(data, sizeof(data), CUx_TEMP);
+}
+
+
+void addDataToBuffer(uint8_t* buff, uint16_t buff_pointer, uint8_t* data, size_t size, uint8_t data_descriptor) {
   // Přidání descriptoru na aktuální pozici
-  if (descriptor != 0) {
-  UserTxBufferFS[UserTxBufferFS_pointer++] = descriptor;
+  if (data_descriptor != 0) {
+  buff[buff_pointer++] = data_descriptor;
   }
   // Kopírování dat za descriptor
-  memcpy(UserTxBufferFS + UserTxBufferFS_pointer, data, size);
+  memcpy(buff + buff_pointer, data, size);
   // Aktualizace aktuální pozice
-  UserTxBufferFS_pointer += size;
+  buff_pointer += size;
 }
 
-void sendUSBMasssage() {
-  while (CDC_Transmit_FS(UserTxBufferFS, UserTxBufferFS_pointer) == USBD_BUSY);
-  UserTxBufferFS_pointer = 0;
-  memset(UserTxBufferFS, 0x00, APP_TX_DATA_SIZE);
+void sendUSBMasssage(uint8_t* data, uint16_t size) {
+  if (size <= APP_TX_DATA_SIZE) {
+    while (CDC_Transmit_FS(data, size) == USBD_BUSY);
+  } else {
+    USB_SendBlock(data, size);
+  }
+
+  memset(data, 0x00, size);
+  size = 0;
 }
 
-void addSignatureUSBBuffer() {
+void addSignatureBuffer(uint8_t* buff, uint16_t buff_pointer) {
   uint32_t signature[3];
   signature[0] = HAL_GetUIDw0();
   signature[1] = HAL_GetUIDw1();
   signature[2] = HAL_GetUIDw2();
-  addDataToUSBBuffer((uint8_t*)signature, 3*sizeof(uint32_t), 0);
+  addDataToBuffer(buff, buff_pointer, (uint8_t*)signature, 3*sizeof(uint32_t), 0);
 }
 
 void USB_SendBlock(uint8_t* data, uint32_t len) {

@@ -1,0 +1,124 @@
+Configuration	BeeBrain
+STM32CubeMX 	6.14.0
+Date	05/10/2025
+MCU	STM32L452RCTx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+I2C1	I2C	I2C1_SCL	PB8
+I2C1	I2C	I2C1_SDA	PB9
+SAI1:SAI B	Master	SAI1_SD_B	PB5
+SAI1:SAI B	Master	SAI1_SCK_B	PB3 (JTDO/TRACESWO)
+SAI1:SAI B	Master	SAI1_FS_B	PB6
+SAI1:SAI B	Basic	SAI1_VP_$IpInstance_SAIB_SAI_BASIC	VP_SAI1_VP_$IpInstance_SAIB_SAI_BASIC
+SPI3	Full-Duplex Master	SPI3_MISO	PC11
+SPI3	Full-Duplex Master	SPI3_MOSI	PC12
+SPI3	Full-Duplex Master	SPI3_SCK	PC10
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14 (JTCK/SWCLK)
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13 (JTMS/SWDIO)
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+UART4	Single Wire (Half-Duplex)	UART4_TX	PA0
+USB	Device (FS)	USB_DM	PA11
+USB	Device (FS)	USB_DP	PA12
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+8	PC0	GPIO_Input	TEST
+14	PA0	UART4_TX	
+20	PA4	GPIO_Output	CS_CU1
+21	PA5	GPIO_Output	CS_CU3
+22	PA6	GPIO_Output	CS_CU5
+23	PA7	GPIO_Output	CS_CU7
+24	PC4	GPIO_Output	CS_CU9
+26	PB0	GPIO_Output	CS_CU8
+27	PB1	GPIO_Output	CS_CU6
+28	PB2	GPIO_Output	CS_CU4
+29	PB10	GPIO_Output	CS_CU2
+30	PB11	GPIO_Output	CS_CU0
+33	PB12	GPIO_Output	STAT
+44	PA11	USB_DM	
+45	PA12	USB_DP	
+46	PA13 (JTMS/SWDIO)	SYS_JTMS-SWDIO	
+49	PA14 (JTCK/SWCLK)	SYS_JTCK-SWCLK	
+51	PC10	SPI3_SCK	
+52	PC11	SPI3_MISO	
+53	PC12	SPI3_MOSI	
+55	PB3 (JTDO/TRACESWO)	SAI1_SCK_B	
+57	PB5	SAI1_SD_B	
+58	PB6	SAI1_FS_B	
+61	PB8	I2C1_SCL	
+62	PB9	I2C1_SDA	
+PERIPHERALS	MODES	FUNCTIONS	PINS
+I2C1	I2C	I2C1_SCL	PB8
+I2C1	I2C	I2C1_SDA	PB9
+SAI1:SAI B	Master	SAI1_SD_B	PB5
+SAI1:SAI B	Master	SAI1_SCK_B	PB3 (JTDO/TRACESWO)
+SAI1:SAI B	Master	SAI1_FS_B	PB6
+SAI1:SAI B	Basic	SAI1_VP_$IpInstance_SAIB_SAI_BASIC	VP_SAI1_VP_$IpInstance_SAIB_SAI_BASIC
+SPI3	Full-Duplex Master	SPI3_MISO	PC11
+SPI3	Full-Duplex Master	SPI3_MOSI	PC12
+SPI3	Full-Duplex Master	SPI3_SCK	PC10
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14 (JTCK/SWCLK)
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13 (JTMS/SWDIO)
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+UART4	Single Wire (Half-Duplex)	UART4_TX	PA0
+USB	Device (FS)	USB_DM	PA11
+USB	Device (FS)	USB_DP	PA12
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+8	PC0	GPIO_Input	TEST
+14	PA0	UART4_TX	
+20	PA4	GPIO_Output	CS_CU1
+21	PA5	GPIO_Output	CS_CU3
+22	PA6	GPIO_Output	CS_CU5
+23	PA7	GPIO_Output	CS_CU7
+24	PC4	GPIO_Output	CS_CU9
+26	PB0	GPIO_Output	CS_CU8
+27	PB1	GPIO_Output	CS_CU6
+28	PB2	GPIO_Output	CS_CU4
+29	PB10	GPIO_Output	CS_CU2
+30	PB11	GPIO_Output	CS_CU0
+33	PB12	GPIO_Output	STAT
+44	PA11	USB_DM	
+45	PA12	USB_DP	
+46	PA13 (JTMS/SWDIO)	SYS_JTMS-SWDIO	
+49	PA14 (JTCK/SWCLK)	SYS_JTCK-SWCLK	
+51	PC10	SPI3_SCK	
+52	PC11	SPI3_MISO	
+53	PC12	SPI3_MOSI	
+55	PB3 (JTDO/TRACESWO)	SAI1_SCK_B	
+57	PB5	SAI1_SD_B	
+58	PB6	SAI1_FS_B	
+61	PB8	I2C1_SCL	
+62	PB9	I2C1_SDA	
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : BeeBrain
+Project Folder : D:\GIT\Brain
+Toolchain / IDE : STM32CubeIDE
+Firmware Package Name and Version : STM32Cube FW_L4 V1.18.1
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : Yes
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+

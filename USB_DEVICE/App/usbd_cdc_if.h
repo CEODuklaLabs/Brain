@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -49,11 +49,19 @@
   * @{
   */
 /* Define size for the receive and transmit buffer over CDC */
-#define APP_RX_DATA_SIZE  256
+#define APP_RX_DATA_SIZE  2048
 #define APP_TX_DATA_SIZE  2048
 /* USER CODE BEGIN EXPORTED_DEFINES */
+ extern uint8_t USB_Flag;
+ extern uint8_t USB_Command;
 
-/* USER CODE END EXPORTED_DEFINES */
+ /** Received data over USB are stored in this buffer      */
+ extern uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
+
+ /** Data to send over USB CDC are stored in this buffer   */
+ extern uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
+ extern uint16_t UserTxBufferFS_pointer;
+ /* USER CODE END EXPORTED_DEFINES */
 
 /**
   * @}
@@ -94,15 +102,7 @@
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-extern uint8_t USB_Flag;
-extern uint8_t USB_Command;
 
-/** Received data over USB are stored in this buffer      */
-extern uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
-
-/** Data to send over USB CDC are stored in this buffer   */
-extern uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
-extern uint16_t UserTxBufferFS_pointer;
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
@@ -117,25 +117,24 @@ extern uint16_t UserTxBufferFS_pointer;
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
-
 /**
  * @brief Adds data to the USB buffer.
- * 
+ *
  * @param data Pointer to the data to be added.
  * @param size Size of the data to be added.
  * @param descriptor Descriptor for the data.
  */
-void addDataToUSBBuffer(uint8_t *data, size_t size, uint8_t descriptor);
+void addDataToBuffer(uint8_t* buff, uint16_t buff_pointer, uint8_t* data, size_t size, uint8_t data_descriptor);
 
 /**
  * @brief Sends a USB message.
  */
-void sendUSBMasssage();
+void sendUSBMasssage(uint8_t* data, uint16_t size) ;
 
 /**
  * @brief Adds the signature to the USB buffer.
  */
-void addSignatureUSBBuffer();
+void addSignatureBuffer(uint8_t* buff, uint16_t buff_pointer) ;
 
 /**
  * @brief Send a block of data over USB.
@@ -143,6 +142,8 @@ void addSignatureUSBBuffer();
  * @param len Length of the data to be sent in bytes.
  */
 void USB_SendBlock(uint8_t* data, uint32_t len);
+
+
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**

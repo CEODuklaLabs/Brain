@@ -41,7 +41,7 @@ extern UART_HandleTypeDef huart4;
 void MX_UART4_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void sendUARTMasssage(uint8_t* data);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

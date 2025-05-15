@@ -54,20 +54,8 @@ void MX_SAI1_Init(void);
  * @note Tato funkce je volána, když je přijatý buffer plný
  */
 void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai);
-
-/**
- * @brief Implementace reakce na přijetí poloviny dat
- * @param hsai ukazatel na strukturu SAI_HandleTypeDef
- * @retval None
- * @note Tato funkce je volána, když je přijatá polovina bufferu
- */
-void HAL_SAI_RxHalfCpltCallback(SAI_HandleTypeDef *hsai);
-
-/**
- * @brief Implementace měření zvuku
- * @retval None
- */
-void Meas_Audio(uint8_t mode);
+void StartAudioProcessing(uint8_t mode, uint32_t num_samples);
+void ProcessFFT(float32_t *input, float32_t *output);
 
 
 /* USER CODE END Prototypes */
